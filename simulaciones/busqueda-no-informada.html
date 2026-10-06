@@ -382,7 +382,7 @@ var GUIA = [
     texto: "Pac-Man está en <b>B2</b>, arriba a la izquierda. La última comida, en <b>P8</b>, abajo a la derecha. Las casillas con un 5 son el pasillo que vigilan los dos fantasmas: entrar ahí cuesta 5 en vez de 1. La frontera arranca con una sola casilla, la de Pac-Man.",
     estrategia: "amplitud", pasos: 0 },
   { titulo: "El primer paso",
-    texto: "Sale <b>B2</b> de la frontera y se expande: se miran sus vecinos. Entran <b>C2</b> y <b>B3</b>, en ese orden, porque el orden es siempre el mismo — arriba, abajo, izquierda, derecha. Mira la caja de la frontera: ahora tiene dos.",
+    texto: "Sale <b>B2</b> de la frontera y se expande: se miran sus vecinos. Entran <b>B3</b> y <b>C2</b>, en ese orden, porque el orden es siempre el mismo — arriba, abajo, izquierda, derecha: arriba hay muro, abajo está B3, a la izquierda hay muro y a la derecha está C2. Mira la caja de la frontera: ahora tiene dos.",
     estrategia: "amplitud", pasos: 1 },
   { titulo: "Amplitud se abre en anillos",
     texto: "Cinco pasos. Lo verde es lo ya expandido; lo claro, lo que espera en la frontera. Fíjate en que el verde crece <b>como un anillo</b> alrededor de Pac-Man: amplitud termina un nivel entero antes de pasar al siguiente, porque sale siempre la casilla más antigua.",
