@@ -437,7 +437,7 @@ function probar(ej, area, salida, boton) {
     lista.appendChild(li);
     return li;
   });
-  var actual = -1, bien = 0, terminado = false, w;
+  var actual = -1, bien = 0, sinReturn = 0, terminado = false, w;
   boton.disabled = true;
   function log(t) { consolaT.style.display = ""; consola.textContent += t + "\n"; }
   function fin(mensajeGlobal, ok) {
@@ -476,11 +476,14 @@ function probar(ej, area, salida, boton) {
     } else if (m.tipo === "inicio") actual = m.i;
     else if (m.tipo === "prueba") {
       var p = pruebas[m.i];
+      if (!m.ok && !m.error && m.obtenido === "undefined") sinReturn++;
       if (m.ok) { bien++; ponerResultado(m.i, true, "da <b>" + esc(m.obtenido) + "</b>"); }
       else if (m.error) ponerResultado(m.i, false, "esperado: <b>" + esc(mostrar(p.esperado)) + "</b><br>error: <b>" + esc(m.error) + "</b>" + (explicarError(m.error) ? "<br>" + esc(explicarError(m.error)) : ""));
       else ponerResultado(m.i, false, "esperado: <b>" + esc(mostrar(p.esperado)) + "</b><br>obtenido: <b>" + esc(m.obtenido) + "</b>");
     } else if (m.tipo === "fin") {
       if (bien === pruebas.length) fin("✔ Pasa las " + pruebas.length + " pruebas. La parte en código está resuelta.", true);
+      else if (sinReturn === pruebas.length) fin("✘ Su función todavía no devuelve nada (sale undefined en todas las pruebas). " +
+        "Completen los pasos de los comentarios y no olviden el return.", false);
       else fin("✘ Pasa " + bien + " de " + pruebas.length + " pruebas.", false);
     }
   };
