@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amplitud y profundidad, animadas</title>
+<meta name="description" content="EST331 · Inteligencia Artificial · Recorrer un grafo con una fila y con una pila, paso a paso.">
+<style>
+:root{
+  --crema:#fbf7ef; --arena:#efe6d4; --salvia:#42654e; --salvia-claro:#dfe9e1; --terracota:#a64c28;
+  --terracota-claro:#f6e2d8; --oro:#d9a520; --tinta:#24251f; --gris:#6d6a60; --borde:#d8cfbd;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--crema);color:var(--tinta);font-family:Georgia,"Times New Roman",serif}
+body{min-height:100vh;display:flex;flex-direction:column}
+header.barra{display:flex;align-items:center;gap:14px;padding:12px 22px;border-bottom:1px solid var(--borde);font-family:system-ui,Segoe UI,sans-serif;font-size:14px;color:var(--gris)}
+header.barra b{color:var(--salvia)}
+header.barra nav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+header.barra nav button{border:1px solid var(--borde);background:#fff;border-radius:999px;padding:5px 11px;font:inherit;cursor:pointer;color:var(--tinta)}
+header.barra nav button.activa{background:var(--salvia);color:#fff;border-color:var(--salvia)}
+main{flex:1;display:flex;justify-content:center;padding:18px 18px 30px}
+.escena{display:none;width:100%;max-width:1220px;animation:aparece .5s ease}
+.escena.activa{display:block}
+@keyframes aparece{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+h1{font-size:clamp(34px,5vw,64px);margin:.2em 0 .15em;letter-spacing:-1px;line-height:1.05}
+h2{font-size:clamp(26px,3.4vw,44px);margin:.1em 0 .25em;letter-spacing:-.5px}
+.kicker{font-family:system-ui,Segoe UI,sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--terracota);font-weight:700}
+.lead{font-size:clamp(18px,2vw,25px);color:var(--gris);max-width:900px;line-height:1.35;margin:.2em 0 .8em}
+.grande{font-size:clamp(20px,2.2vw,28px);line-height:1.4}
+.fila2{display:grid;grid-template-columns:1.25fr 1fr;gap:22px;align-items:start}
+@media (max-width:860px){.fila2{grid-template-columns:1fr}}
+.tarjeta{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:16px 18px}
+svg{width:100%;height:auto;display:block}
+.arista{stroke:#b9b09c;stroke-width:4;stroke-linecap:round;transition:stroke .4s,stroke-width .4s}
+.arista.camino{stroke:var(--oro);stroke-width:9}
+.nodo circle{fill:#fff;stroke:var(--tinta);stroke-width:3;transition:fill .4s,stroke .4s,r .3s}
+.nodo text{font-family:system-ui,Segoe UI,sans-serif;font-size:17px;font-weight:700;fill:var(--tinta);text-anchor:middle;pointer-events:none}
+.nodo text.chico{font-size:13px;font-weight:600;fill:var(--gris)}
+.nodo.frontera circle{stroke:var(--terracota);stroke-width:6;fill:var(--terracota-claro)}
+.nodo.visitado circle{fill:var(--salvia);stroke:var(--salvia)}
+.nodo.visitado text.nom{fill:#fff}
+.nodo.actual circle{fill:var(--oro);stroke:var(--tinta);animation:late 1s ease-in-out infinite}
+.nodo.actual text.nom{fill:var(--tinta)}
+.nodo.camino circle{fill:var(--oro);stroke:var(--tinta)}
+.nodo.camino text.nom{fill:var(--tinta)}
+.nodo.meta-marca circle{stroke-dasharray:6 5}
+@keyframes late{0%,100%{transform:scale(1)}50%{transform:scale(1.13)}}
+.nodo{transform-box:fill-box;transform-origin:center}
+.nodo.actual{animation:late 1s ease-in-out infinite}
+.contenedor{margin-top:10px}
+.rotulo{font-family:system-ui,Segoe UI,sans-serif;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gris);font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+.cola{display:flex;gap:8px;min-height:64px;align-items:center;padding:10px;border:2px dashed var(--borde);border-radius:14px;position:relative;flex-wrap:wrap}
+.pila{display:flex;flex-direction:column-reverse;gap:6px;min-height:230px;justify-content:flex-start;align-items:center;padding:10px;border:2px dashed var(--borde);border-top:none;border-radius:0 0 18px 18px;width:240px;margin:0 auto}
+.ficha{font-family:system-ui,Segoe UI,sans-serif;font-weight:700;font-size:18px;background:var(--terracota-claro);border:2px solid var(--terracota);color:var(--tinta);border-radius:12px;padding:10px 14px;animation:entra .45s cubic-bezier(.2,.9,.3,1.3)}
+.pila .ficha{width:200px;text-align:center;border-radius:30px/12px}
+.ficha.sale{animation:sale .45s ease forwards}
+.ficha.repetida{text-decoration:line-through;opacity:.55}
+@keyframes entra{from{opacity:0;transform:translateY(-22px) scale(.8)}to{opacity:1;transform:none}}
+@keyframes sale{to{opacity:0;transform:translateX(-40px) scale(.7)}}
+.pila .ficha.sale{animation:salepila .45s ease forwards}
+@keyframes salepila{to{opacity:0;transform:translateY(-40px) scale(.8)}}
+.vacia{color:var(--gris);font-style:italic;font-size:16px}
+.narracion{margin-top:14px;background:var(--salvia-claro);border-left:6px solid var(--salvia);border-radius:12px;padding:14px 18px;font-size:clamp(19px,2vw,25px);line-height:1.38;min-height:96px}
+.narracion b{color:var(--terracota)}
+.visitados{margin-top:12px;font-family:system-ui,Segoe UI,sans-serif;font-size:15px;color:var(--gris)}
+.visitados span{display:inline-block;background:var(--salvia);color:#fff;border-radius:999px;padding:3px 10px;margin:3px 4px 0 0;font-weight:600;animation:entra .4s}
+.controles{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;font-family:system-ui,Segoe UI,sans-serif}
+.controles button{font:600 16px system-ui,Segoe UI,sans-serif;border:none;border-radius:12px;padding:11px 18px;cursor:pointer;background:var(--salvia);color:#fff}
+.controles button.sec{background:#fff;color:var(--tinta);border:1px solid var(--borde)}
+.controles button:disabled{opacity:.45;cursor:default}
+.controles select{font:15px system-ui,Segoe UI,sans-serif;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff}
+.contador{font-family:system-ui,Segoe UI,sans-serif;color:var(--gris);font-size:14px}
+.demo-cola{display:flex;gap:10px;align-items:center;height:70px;overflow:hidden;position:relative}
+.persona{width:52px;height:52px;border-radius:50%;background:var(--terracota-claro);border:3px solid var(--terracota);display:flex;align-items:center;justify-content:center;font:700 18px system-ui,Segoe UI,sans-serif;flex:none;transition:transform .6s,opacity .6s}
+.flecha-txt{font-family:system-ui,Segoe UI,sans-serif;font-size:14px;color:var(--gris)}
+.demo-pila{display:flex;flex-direction:column-reverse;align-items:center;gap:5px;height:230px;justify-content:flex-start}
+.plato{width:180px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--salvia);display:flex;align-items:center;justify-content:center;font:700 15px system-ui,Segoe UI,sans-serif;transition:transform .6s,opacity .6s}
+.lado{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:860px){.lado{grid-template-columns:1fr}}
+.mini .cola{min-height:52px}.mini .ficha{font-size:15px;padding:7px 10px}
+.mini .narracion{font-size:17px;min-height:80px}
+.mini .pila{min-height:160px;width:190px}.mini .pila .ficha{width:160px}
+.pie{font-family:system-ui,Segoe UI,sans-serif;font-size:13px;color:var(--gris);text-align:center;padding:10px}
+a{color:var(--salvia)}
+.enlaces{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+.enlaces a{display:block;text-decoration:none;color:var(--tinta);background:#fff;border:1px solid var(--borde);border-radius:16px;padding:18px;font-size:20px}
+.enlaces a small{display:block;color:var(--gris);font-size:15px;margin-top:6px;font-family:system-ui,Segoe UI,sans-serif}
+.pregunta{font-size:clamp(20px,2.2vw,28px);background:#fff;border:2px solid var(--terracota);border-radius:16px;padding:16px 20px;margin:10px 0}
+</style>
+</head>
+<body>
+<header class="barra">
+  <b>EST331 · Inteligencia Artificial</b><span>Amplitud y profundidad, animadas</span>
+  <nav id="nav"></nav>
+</header>
+
+<main>
+
+<section class="escena" data-titulo="Inicio">
+  <div class="kicker">Hoy</div>
+  <h1>Buscar en un grafo es preguntar a los vecinos</h1>
+  <p class="lead">Ayer vimos que un grafo son lugares y caminos. Hoy vemos dos maneras de recorrerlo para encontrar uno: <b>haciendo fila</b> o <b>apilando</b>.</p>
+  <div class="fila2">
+    <div class="tarjeta"><svg id="svgPortada" viewBox="0 0 640 380"></svg></div>
+    <div>
+      <p class="grande">Toca un lugar del mapa y mira quiénes son sus vecinos.</p>
+      <div class="narracion" id="narPortada">Toca, por ejemplo, <b>Plaza</b>.</div>
+      <p class="contador" style="margin-top:14px">Flechas ← → para pasar de pantalla.</p>
+    </div>
+  </div>
+</section>
+
+<section class="escena" data-titulo="Fila y pila">
+  <div class="kicker">Las dos ideas</div>
+  <h2>Una fila de banco y una pila de platos</h2>
+  <div class="lado">
+    <div class="tarjeta">
+      <div class="rotulo"><span>La fila · amplitud</span></div>
+      <p class="grande" style="margin-top:0">El que <b>llegó primero</b> es el primero en salir. Los nuevos se ponen al final.</p>
+      <div class="flecha-txt">← sale por aquí &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; entran por aquí →</div>
+      <div class="demo-cola" id="demoCola"></div>
+    </div>
+    <div class="tarjeta">
+      <div class="rotulo"><span>La pila · profundidad</span></div>
+      <p class="grande" style="margin-top:0">El <b>último que pusiste</b> es el primero que sacas: el de arriba.</p>
+      <div class="demo-pila" id="demoPila"></div>
+    </div>
+  </div>
+  <div class="narracion">Eso es todo. Amplitud usa una <b>fila</b>; profundidad, una <b>pila</b>. Lo demás es igual: sacar uno, preguntarle sus vecinos y guardarlos.</div>
+</section>
+
+<section class="escena" data-titulo="Amplitud" data-busqueda="bfs">
+  <div class="kicker">Amplitud · con una fila</div>
+  <h2>Sale el que llegó primero</h2>
+  <div class="fila2">
+    <div class="tarjeta"><svg class="mapa" viewBox="0 0 640 380"></svg></div>
+    <div>
+      <div class="rotulo"><span>La fila</span><span>← sale el primero</span></div>
+      <div class="cola contenedor"></div>
+      <div class="visitados"></div>
+    </div>
+  </div>
+  <div class="narracion"></div>
+  <div class="controles"></div>
+</section>
+
+<section class="escena" data-titulo="Profundidad" data-busqueda="dfs">
+  <div class="kicker">Profundidad · con una pila</div>
+  <h2>Sale el último que entró</h2>
+  <div class="fila2">
+    <div class="tarjeta"><svg class="mapa" viewBox="0 0 640 380"></svg></div>
+    <div>
+      <div class="rotulo"><span>La pila</span><span>sale el de arriba ↑</span></div>
+      <div class="pila contenedor"></div>
+      <div class="visitados"></div>
+    </div>
+  </div>
+  <div class="narracion"></div>
+  <div class="controles"></div>
+</section>
+
+<section class="escena" data-titulo="Lado a lado" id="escLado">
+  <div class="kicker">Las dos, al mismo tiempo</div>
+  <h2>Mismo mapa, otro orden, otro camino</h2>
+  <div class="lado">
+    <div class="tarjeta mini" data-busqueda="bfs" data-sin-controles>
+      <div class="rotulo"><span>Amplitud · fila</span></div>
+      <svg class="mapa" viewBox="0 0 640 380"></svg>
+      <div class="cola contenedor"></div>
+      <div class="narracion"></div>
+    </div>
+    <div class="tarjeta mini" data-busqueda="dfs" data-sin-controles>
+      <div class="rotulo"><span>Profundidad · pila</span></div>
+      <svg class="mapa" viewBox="0 0 640 380"></svg>
+      <div class="cola contenedor"></div>
+      <div class="narracion"></div>
+    </div>
+  </div>
+  <div class="controles" id="ctlLado"></div>
+</section>
+
+<section class="escena" data-titulo="Ahora ustedes">
+  <div class="kicker">En parejas · en el cuaderno</div>
+  <h2>Ahora ustedes: de Puerto a Terminal</h2>
+  <div class="pregunta">Hagan la tabla <b>sale · fila (o pila) · visitados</b> con amplitud y después con profundidad. ¿Qué camino encuentra cada una?</div>
+  <div class="pregunta">Pista: los vecinos se escriben siempre en el orden de la lista de vecinos. Si sale uno que ya visitaron, lo tachan y siguen.</div>
+  <p class="grande">Cuando terminen, vuelvan a <b>Amplitud</b> y <b>Profundidad</b>, elijan <b>desde Puerto hasta Terminal</b> y comprueben paso a paso.</p>
+</section>
+
+<section class="escena" data-titulo="Y después">
+  <div class="kicker">Para seguir</div>
+  <h2>Lo mismo, en grande y en código</h2>
+  <div class="enlaces">
+    <a href="https://vl4dimr.github.io/est331/simulaciones/busqueda-no-informada.html">El laberinto de Pac-Man<small>Amplitud y profundidad en un laberinto de 64 casillas, con recorrido guiado.</small></a>
+    <a href="https://vl4dimr.github.io/est331/practicas/">Prácticas en JavaScript<small>Cinco de amplitud y cinco de profundidad. A mano y en código; se corrigen solas.</small></a>
+  </div>
+  <div class="narracion" style="margin-top:18px">Amplitud encuentra el camino con <b>menos pasos</b>, porque mira primero todo lo que está cerca. Profundidad se mete por un camino hasta el fondo: gasta menos memoria, pero su camino puede ser largo.</div>
+</section>
+
+</main>
+<div class="pie">vl4dimr.github.io/est331 · El mapa es un ejemplo simplificado, no el plano real de Puno.</div>
+
+<script>
+"use strict";
+var G = {
+  "Universidad": ["Plaza", "Terminal"],
+  "Plaza": ["Universidad", "Mercado", "Puerto"],
+  "Terminal": ["Universidad", "Mercado"],
+  "Mercado": ["Plaza", "Terminal"],
+  "Puerto": ["Plaza"]
+};
+var POS = {"Universidad": [110, 120], "Plaza": [330, 70], "Terminal": [130, 300], "Mercado": [350, 285], "Puerto": [545, 190]};
+var NOMBRES = Object.keys(G);
+
+/* ---------- el recorrido, paso a paso, con su frase ---------- */
+function recorrer(tipo, inicio, meta){
+  var fila = [{n: inicio, de: null}], visit = [], padre = {}, pasos = [];
+  var estructura = tipo === "bfs" ? "la fila" : "la pila";
+  pasos.push({tipo: "inicio", actual: null, frontera: fila.slice(), visit: [], nuevos: [inicio],
+    texto: "Empezamos en <b>" + inicio + "</b>. Es lo único que hay en " + estructura + ". Buscamos <b>" + meta + "</b>."});
+  var vueltas = 0;
+  while (fila.length && vueltas++ < 50){
+    var item = tipo === "bfs" ? fila.shift() : fila.pop();
+    var cual = tipo === "bfs" ? "el primero de la fila" : "el de arriba de la pila";
+    if (visit.indexOf(item.n) >= 0){
+      pasos.push({tipo: "repetido", actual: item.n, sale: item.n, frontera: fila.slice(), visit: visit.slice(), nuevos: [],
+        texto: "Sale <b>" + item.n + "</b>, pero ya lo visitamos. Lo tachamos y seguimos."});
+      continue;
+    }
+    visit.push(item.n);
+    padre[item.n] = item.de;
+    if (item.n === meta){
+      var camino = [], x = meta;
+      while (x !== null && x !== undefined){ camino.unshift(x); x = padre[x]; }
+      pasos.push({tipo: "meta", actual: item.n, sale: item.n, frontera: fila.slice(), visit: visit.slice(), nuevos: [], camino: camino,
+        texto: "Sale <b>" + item.n + "</b>: ¡es la meta! Para saber el camino, miramos quién trajo a quién: <b>" +
+          camino.join(" → ") + "</b>. " + (camino.length - 1) + " tramos."});
+      return pasos;
+    }
+    var nuevos = G[item.n].filter(function(v){ return visit.indexOf(v) < 0; });
+    var esperando = nuevos.filter(function(v){ return fila.some(function(f){ return f.n === v; }); });
+    nuevos.forEach(function(v){ fila.push({n: v, de: item.n}); });
+    var t = "Sale <b>" + item.n + "</b>, " + cual + ". ¿Es " + meta + "? No. ";
+    t += nuevos.length ? "Sus vecinos sin visitar son <b>" + nuevos.join(" y ") + "</b>: " +
+         (tipo === "bfs" ? "se ponen al final de la fila." : "se ponen encima de la pila.")
+       : "No tiene vecinos nuevos: no entra nadie.";
+    if (esperando.length) t += " Ojo: <b>" + esperando.join(" y ") + "</b> ya estaba esperando; queda dos veces. " +
+      "Cuando salga la segunda vez, lo tachamos.";
+    pasos.push({tipo: "expande", actual: item.n, sale: item.n, frontera: fila.slice(), visit: visit.slice(), nuevos: nuevos, texto: t});
+  }
+  return pasos;
+}
+
+/* ---------- el dibujo del mapa ---------- */
+var SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, padre){
+  var e = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  if (padre) padre.appendChild(e);
+  return e;
+}
+function clave(a, b){ return [a, b].sort().join("|"); }
+function dibujarMapa(svg, alTocar){
+  svg.innerHTML = "";
+  var hechas = {};
+  NOMBRES.forEach(function(a){
+    G[a].forEach(function(b){
+      if (hechas[clave(a, b)]) return;
+      hechas[clave(a, b)] = 1;
+      el("line", {x1: POS[a][0], y1: POS[a][1], x2: POS[b][0], y2: POS[b][1], "class": "arista", "data-k": clave(a, b)}, svg);
+    });
+  });
+  NOMBRES.forEach(function(n){
+    var g = el("g", {"class": "nodo", "data-n": n}, svg);
+    el("circle", {cx: POS[n][0], cy: POS[n][1], r: 34}, g);
+    var t = el("text", {x: POS[n][0], y: POS[n][1] + 6, "class": "nom"}, g);
+    t.textContent = {"Universidad": "Uni", "Terminal": "Ter", "Mercado": "Mer"}[n] || n;
+    if (t.textContent !== n){
+      var t2 = el("text", {x: POS[n][0], y: POS[n][1] + 58, "class": "chico"}, g);
+      t2.textContent = n;
+    }
+    if (alTocar){ g.style.cursor = "pointer"; g.addEventListener("click", function(){ alTocar(n); }); }
+  });
+}
+function pintarMapa(svg, paso, meta){
+  var front = (paso.frontera || []).map(function(f){ return f.n; });
+  svg.querySelectorAll(".nodo").forEach(function(g){
+    var n = g.getAttribute("data-n");
+    g.setAttribute("class", "nodo" +
+      (paso.camino && paso.camino.indexOf(n) >= 0 ? " camino" :
+       n === paso.actual ? " actual" :
+       paso.visit.indexOf(n) >= 0 ? " visitado" :
+       front.indexOf(n) >= 0 ? " frontera" : "") + (n === meta ? " meta-marca" : ""));
+  });
+  svg.querySelectorAll(".arista").forEach(function(l){
+    var k = l.getAttribute("data-k"), en = false;
+    if (paso.camino) for (var i = 0; i + 1 < paso.camino.length; i++) if (clave(paso.camino[i], paso.camino[i + 1]) === k) en = true;
+    l.setAttribute("class", "arista" + (en ? " camino" : ""));
+  });
+}
+
+/* ---------- la fila o la pila, con sus fichas ---------- */
+function pintarFrontera(cont, paso, anterior, tipo){
+  var dibujar = function(){
+    cont.innerHTML = "";
+    if (!paso.frontera.length){ cont.innerHTML = '<span class="vacia">vacía</span>'; return; }
+    var cuantosNuevos = paso.nuevos.length;
+    paso.frontera.forEach(function(f, i){
+      var d = document.createElement("div");
+      d.className = "ficha";
+      d.textContent = f.n;
+      if (paso.visit.indexOf(f.n) >= 0) d.className += " repetida";
+      if (i < paso.frontera.length - cuantosNuevos) d.style.animation = "none";
+      cont.appendChild(d);
+    });
+  };
+  if (anterior && paso.sale){
+    var fichas = cont.querySelectorAll(".ficha");
+    var objetivo = tipo === "bfs" ? fichas[0] : fichas[fichas.length - 1];
+    if (objetivo){ objetivo.classList.add("sale"); setTimeout(dibujar, 430); return; }
+  }
+  dibujar();
+}
+function pintarVisitados(cont, paso){
+  if (!cont) return;
+  cont.innerHTML = "Visitados: " + (paso.visit.length ? paso.visit.map(function(v){ return "<span>" + v + "</span>"; }).join("") : "<i>ninguno todavía</i>");
+}
+
+/* ---------- un recorrido animado, con sus controles ---------- */
+function Animacion(raiz, tipo, conControles){
+  var self = this;
+  this.tipo = tipo; this.inicio = "Universidad"; this.meta = "Puerto";
+  this.svg = raiz.querySelector("svg.mapa");
+  this.cont = raiz.querySelector(".contenedor");
+  this.nar = raiz.querySelector(".narracion");
+  this.vis = raiz.querySelector(".visitados");
+  dibujarMapa(this.svg);
+  this.reiniciar = function(){
+    self.pasos = recorrer(self.tipo, self.inicio, self.meta);
+    self.i = 0; self.parar();
+    self.mostrar(false);
+  };
+  this.mostrar = function(animar){
+    var p = self.pasos[self.i];
+    pintarMapa(self.svg, p, self.meta);
+    pintarFrontera(self.cont, p, animar ? self.pasos[self.i - 1] : null, self.tipo);
+    pintarVisitados(self.vis, p);
+    self.nar.innerHTML = p.texto;
+    if (self.ctl) self.ctl.actualizar();
+  };
+  this.paso = function(){ if (self.i < self.pasos.length - 1){ self.i++; self.mostrar(true); return true; } self.parar(); return false; };
+  this.atras = function(){ if (self.i > 0){ self.i--; self.mostrar(false); } };
+  this.reloj = null;
+  this.reproducir = function(){
+    if (self.reloj){ self.parar(); return; }
+    if (self.i >= self.pasos.length - 1) self.reiniciar();
+    self.reloj = setInterval(function(){ if (!self.paso()) self.parar(); }, 2300);
+    if (self.ctl) self.ctl.actualizar();
+  };
+  this.parar = function(){ if (self.reloj){ clearInterval(self.reloj); self.reloj = null; } if (self.ctl) self.ctl.actualizar(); };
+  if (conControles) this.ctl = new Controles(raiz.querySelector(".controles"), [this], true);
+  this.reiniciar();
+}
+
+function Controles(cont, animaciones, conLugares){
+  var a0 = animaciones[0];
+  cont.innerHTML = "";
+  function boton(txt, cls, fn){ var b = document.createElement("button"); b.textContent = txt; if (cls) b.className = cls; b.onclick = fn; cont.appendChild(b); return b; }
+  var bPaso = boton("Paso ▸", "", function(){ animaciones.forEach(function(a){ a.paso(); }); });
+  var bPlay = boton("▶ Reproducir", "sec", function(){ animaciones.forEach(function(a){ a.reproducir(); }); });
+  boton("◂ Atrás", "sec", function(){ animaciones.forEach(function(a){ a.atras(); }); });
+  boton("Reiniciar", "sec", function(){ animaciones.forEach(function(a){ a.reiniciar(); }); });
+  if (conLugares){
+    var opciones = NOMBRES.map(function(n){ return "<option>" + n + "</option>"; }).join("");
+    var s1 = document.createElement("select"), s2 = document.createElement("select");
+    s1.innerHTML = opciones; s2.innerHTML = opciones;
+    s1.value = a0.inicio; s2.value = a0.meta;
+    var et = document.createElement("span"); et.className = "contador"; et.textContent = "desde";
+    var et2 = document.createElement("span"); et2.className = "contador"; et2.textContent = "hasta";
+    cont.appendChild(et); cont.appendChild(s1); cont.appendChild(et2); cont.appendChild(s2);
+    var cambiar = function(){ animaciones.forEach(function(a){ a.inicio = s1.value; a.meta = s2.value; a.reiniciar(); }); };
+    s1.onchange = cambiar; s2.onchange = cambiar;
+  }
+  var cuenta = document.createElement("span"); cuenta.className = "contador"; cont.appendChild(cuenta);
+  this.actualizar = function(){
+    var fin = animaciones.every(function(a){ return a.pasos && a.i >= a.pasos.length - 1; });
+    bPaso.disabled = fin;
+    bPlay.textContent = animaciones.some(function(a){ return a.reloj; }) ? "❚❚ Pausa" : "▶ Reproducir";
+    cuenta.textContent = animaciones.map(function(a){ return a.pasos ? "paso " + a.i + " de " + (a.pasos.length - 1) : ""; }).join(" · ");
+  };
+}
+
+/* ---------- las escenas ---------- */
+var escenas = Array.prototype.slice.call(document.querySelectorAll(".escena"));
+var actual = 0, anims = [];
+var nav = document.getElementById("nav");
+escenas.forEach(function(e, i){
+  var b = document.createElement("button");
+  b.textContent = e.getAttribute("data-titulo");
+  b.onclick = function(){ ir(i); };
+  nav.appendChild(b);
+});
+function ir(i){
+  actual = Math.max(0, Math.min(escenas.length - 1, i));
+  escenas.forEach(function(e, k){ e.classList.toggle("activa", k === actual); });
+  nav.querySelectorAll("button").forEach(function(b, k){ b.classList.toggle("activa", k === actual); });
+  anims.forEach(function(a){ a.parar(); });
+  try { history.replaceState(null, "", "#" + actual); } catch (e) {}
+}
+
+// portada: tocar un lugar enciende sus vecinos
+var svgP = document.getElementById("svgPortada");
+dibujarMapa(svgP, function(n){
+  pintarMapa(svgP, {actual: n, visit: [], frontera: G[n].map(function(v){ return {n: v}; })}, null);
+  document.getElementById("narPortada").innerHTML = "Los vecinos de <b>" + n + "</b> son <b>" + G[n].join(", ") +
+    "</b>. " + (G[n].length === 1 ? "Uno solo." : G[n].length + " vecinos.") + " Esa lista es lo único que necesita quien busca.";
+});
+
+// escenas de amplitud y profundidad
+document.querySelectorAll(".escena[data-busqueda]").forEach(function(e){
+  anims.push(new Animacion(e, e.getAttribute("data-busqueda"), true));
+});
+// lado a lado: un solo juego de controles para las dos
+var lado = Array.prototype.map.call(document.querySelectorAll("#escLado [data-busqueda]"), function(t){
+  var a = new Animacion(t, t.getAttribute("data-busqueda"), false);
+  if (a.tipo === "dfs"){ a.cont.className = "pila contenedor"; a.reiniciar(); }
+  anims.push(a);
+  return a;
+});
+var ctlLado = new Controles(document.getElementById("ctlLado"), lado, true);
+lado.forEach(function(a){ a.ctl = ctlLado; });
+ctlLado.actualizar();
+
+// fila y pila de demostración, en bucle
+(function(){
+  var cola = document.getElementById("demoCola"), pila = document.getElementById("demoPila");
+  var letras = "ABCDEFGHIJ".split(""), k = 0;
+  function persona(l){ var d = document.createElement("div"); d.className = "persona"; d.textContent = l; return d; }
+  function plato(l){ var d = document.createElement("div"); d.className = "plato"; d.textContent = l; return d; }
+  for (var i = 0; i < 4; i++){ cola.appendChild(persona(letras[k % 10])); pila.appendChild(plato(letras[k % 10])); k++; }
+  setInterval(function(){
+    var primero = cola.firstElementChild;
+    if (primero){ primero.style.transform = "translateX(-70px)"; primero.style.opacity = "0"; setTimeout(function(){ primero.remove(); }, 600); }
+    var nuevo = persona(letras[k % 10]); nuevo.style.opacity = "0"; nuevo.style.transform = "translateX(60px)";
+    cola.appendChild(nuevo); requestAnimationFrame(function(){ requestAnimationFrame(function(){ nuevo.style.opacity = "1"; nuevo.style.transform = "none"; }); });
+    var arriba = pila.lastElementChild;
+    if (k % 2 === 0 && arriba){ arriba.style.transform = "translateY(-50px)"; arriba.style.opacity = "0"; setTimeout(function(){ arriba.remove(); }, 600); }
+    else { var p = plato(letras[k % 10]); p.style.opacity = "0"; p.style.transform = "translateY(-50px)"; pila.appendChild(p);
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.style.opacity = "1"; p.style.transform = "none"; }); }); }
+    k++;
+  }, 1800);
+})();
+
+document.addEventListener("keydown", function(ev){
+  if (ev.target.tagName === "SELECT") return;
+  if (ev.key === "ArrowRight" || ev.key === "PageDown"){ ev.preventDefault(); ir(actual + 1); }
+  else if (ev.key === "ArrowLeft" || ev.key === "PageUp"){ ev.preventDefault(); ir(actual - 1); }
+  else if (ev.key === " " || ev.key === "Enter"){
+    var esc = escenas[actual];
+    var b = esc.querySelector(".controles button");
+    if (b && !b.disabled){ ev.preventDefault(); b.click(); }
+  }
+});
+var desdeHash = parseInt((location.hash || "#0").slice(1), 10);
+ir(isNaN(desdeHash) ? 0 : desdeHash);
+
+window.__prueba = function(){
+  return {
+    bfs: recorrer("bfs", "Universidad", "Puerto").map(function(p){ return (p.sale || "-") + ":" + p.frontera.map(function(f){ return f.n; }).join(","); }),
+    dfs: recorrer("dfs", "Universidad", "Puerto").map(function(p){ return (p.sale || "-") + ":" + p.frontera.map(function(f){ return f.n; }).join(","); }),
+    bfsCamino: recorrer("bfs", "Puerto", "Terminal").slice(-1)[0].camino.join(">"),
+    dfsCamino: recorrer("dfs", "Puerto", "Terminal").slice(-1)[0].camino.join(">")
+  };
+};
+</script>
+</body>
+</html>
