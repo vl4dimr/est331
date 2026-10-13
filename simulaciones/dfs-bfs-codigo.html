@@ -38,11 +38,11 @@ svg{width:100%;height:auto;display:block;max-width:100%}
 .edge.active{stroke:var(--cur)}
 .edge.done{stroke:var(--node)}
 .node circle{fill:var(--panel);stroke:var(--line);stroke-width:3;transition:fill .25s,stroke .25s}
-.node text{font-family:var(--mono);font-weight:700;font-size:22px;fill:var(--fg);text-anchor:middle;dominant-baseline:central}
-.node.visited circle{fill:var(--node);stroke:var(--node)} .node.visited text{fill:var(--node-fg)}
+.node text.etq{font-family:var(--mono);font-weight:700;font-size:22px;fill:var(--fg);text-anchor:middle;dominant-baseline:central}
+.node.visited circle{fill:var(--node);stroke:var(--node)} .node.visited text.etq{fill:var(--node-fg)}
 .node.current circle{stroke:var(--cur);stroke-width:5}
 .node.queued circle{stroke:var(--queued);stroke-dasharray:6 4}
-.node.done circle{fill:var(--done);stroke:var(--done)} .node.done text{fill:#fff}
+.node.done circle{fill:var(--done);stroke:var(--done)} .node.done text.etq{fill:#fff}
 pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:10px 0;font-family:var(--mono);font-size:15px;line-height:1.55;overflow-x:auto}
 pre .ln{display:block;padding:0 12px;white-space:pre}
 pre .ln b{display:inline-block;width:1.6em;color:var(--code-cm);font-weight:400}
@@ -73,7 +73,7 @@ input[type=range]{accent-color:var(--node)}
 .explorer{fill:var(--cur);stroke:#fff;stroke-width:2;transition:transform .5s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}
 .badge rect{fill:var(--accent);stroke:none}
 .badge text{font-family:var(--mono);font-size:12px;font-weight:700;fill:#fff;text-anchor:middle;dominant-baseline:central}
-.tag{font-family:var(--sans);font-size:12px;fill:var(--muted);text-anchor:middle}
+.tag{font-family:var(--sans);font-size:13px;font-weight:700;fill:var(--muted);text-anchor:middle}
 .tag.wait{fill:var(--cur)} .tag.queue{fill:var(--queued)} .tag.ok{fill:var(--done)}
 .bubble{position:absolute;max-width:230px;background:var(--panel);border:2px solid var(--cur);border-radius:10px;padding:8px 10px;box-shadow:0 4px 14px rgba(0,0,0,.18);transition:left .5s,top .5s,opacity .3s;pointer-events:none;z-index:2;font-size:14px;line-height:1.35}
 .bubble code{display:block;font-family:var(--mono);font-size:13px;background:var(--code-bg);color:var(--code-fg);padding:3px 7px;border-radius:5px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -490,7 +490,7 @@ const $=id=>document.getElementById(id);
 function buildTree(){
   const L=LABELS[alg]; let s="";
   for(const p in CHILDREN) for(const c of CHILDREN[p]) s+=`<line class="edge" id="e-${p}-${c}" x1="${POS[p][0]}" y1="${POS[p][1]}" x2="${POS[c][0]}" y2="${POS[c][1]}"/>`;
-  POS.forEach((p,i)=>{ s+=`<g class="node" id="n-${i}"><circle cx="${p[0]}" cy="${p[1]}" r="26"/><text x="${p[0]}" y="${p[1]}">${L[i]}</text>`+
+  POS.forEach((p,i)=>{ s+=`<g class="node" id="n-${i}"><circle cx="${p[0]}" cy="${p[1]}" r="26"/><text class="etq" x="${p[0]}" y="${p[1]}">${L[i]}</text>`+
     `<g class="badge" id="b-${i}" style="display:none"><rect x="${p[0]+14}" y="${p[1]-34}" width="26" height="18" rx="9"/><text x="${p[0]+27}" y="${p[1]-25}"></text></g>`+
     `<text class="tag" id="t-${i}" x="${p[0]}" y="${p[1]+42}"></text></g>`; });
   s+=`<circle class="explorer" id="explorer" r="9" cx="0" cy="0" style="display:none"/>`;
@@ -503,9 +503,9 @@ function placeBubble(i,code,plain){
   b.classList.toggle("flip",!right);
   b.innerHTML=`<span class="who">el programa hace</span><code>${code}</code>${plain}`;
   b.style.opacity=1;
-  if(right){ b.style.left=((x+34)/560*100)+"%"; b.style.right="auto"; }
-  else { b.style.right=((560-x+34)/560*100)+"%"; b.style.left="auto"; }
-  b.style.top=((y-26)/440*100)+"%";
+  if(right){ b.style.left=((x+58)/560*100)+"%"; b.style.right="auto"; }
+  else { b.style.right=((560-x+58)/560*100)+"%"; b.style.left="auto"; }
+  b.style.top=((y-14)/440*100)+"%";
 }
 function buildCode(){
   $("code").innerHTML=CODE[alg].map((l,i)=>`<span class="ln" id="l-${i}"><b>${i+1}</b>${l.replace(/(#.*)$/,'<span class="cm">$1</span>')}</span>`).join("");
