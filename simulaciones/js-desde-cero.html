@@ -550,8 +550,7 @@ function pintar() {
     $(p.id + '-cod').value = p.inicial; $(p.id + '-res').innerHTML = ''; $(p.id + '-ok').textContent = '';
     guardar(p.id, {}); $(p.id + '-btn-sol').classList.add('oculto'); $(p.id + '-sol').classList.add('oculto'); pintarAvance();
   }));
-  document.querySelectorAll('textarea').forEach(t => { t.rows = Math.max(4, t.value.split('
-').length + 1); });
+  document.querySelectorAll('textarea').forEach(t => { t.rows = Math.max(4, t.value.split('\n').length + 1); });
   document.querySelectorAll('textarea').forEach(t => t.addEventListener('keydown', e => {
     if (e.key === 'Tab') { e.preventDefault(); const s = t.selectionStart; t.value = t.value.slice(0, s) + '  ' + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = s + 2; }
   }));
