@@ -56,6 +56,31 @@ td.bien{color:var(--sage);font-weight:700}td.mal{color:var(--alert);font-weight:
 .llevar li{margin-bottom:6px;font-size:16px}
 footer.sitio{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
 footer.sitio a{color:var(--sage)}
+.traza{margin-top:12px;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.traza-controles{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.traza-controles input[type=range]{flex:1;min-width:120px;accent-color:var(--clay)}
+.traza .contador{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.traza .donde{margin:8px 0 0;font-size:15px;color:var(--clay);font-weight:700}
+.traza-cuerpo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+@media (max-width:760px){.traza-cuerpo{grid-template-columns:1fr}}
+.traza-codigo{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:8px 0;font-family:var(--mono);font-size:13.5px;line-height:1.5;overflow:auto;max-height:440px}
+.traza-codigo .ln{display:block;padding:0 10px;white-space:pre}
+.traza-codigo .ln b{display:inline-block;width:2em;color:#b8b3a3;font-weight:400}
+.traza-codigo .ln.hl{background:#5b4630;box-shadow:inset 3px 0 0 var(--alert)}
+.traza-diagrama{display:flex;flex-direction:column;gap:10px;max-height:440px;overflow:auto}
+.var{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--cream)}
+.var.cambio{border-color:var(--clay);box-shadow:inset 3px 0 0 var(--clay)}
+.var-nombre{font-family:var(--mono);font-size:13px;color:var(--muted);margin-bottom:6px}
+.chip{display:inline-block;font-family:var(--mono);font-weight:700;padding:3px 9px;border-radius:6px;background:var(--clay);color:#fff;margin:2px;font-size:13.5px}
+.chip.obj{background:var(--sage)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.chip.new{animation:pop .35s ease-out}
+.lista,.colah{display:flex;flex-wrap:wrap;align-items:center;gap:2px}
+.pilav{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.marca{font-size:12px;color:var(--muted);margin:0 6px}
+.sin{color:var(--muted);font-size:14px}
+.escalar{font-family:var(--mono);font-size:14px}
+.nota{margin:8px 0 0;font-size:14px;color:var(--muted)}.nota.mal{color:var(--alert)}
 @media (max-width:640px){h1{font-size:32px}textarea{font-size:14px}}
 </style></head>
 <body>
@@ -64,7 +89,7 @@ footer.sitio a{color:var(--sage)}
   <p class="curso">EST331 · Inteligencia artificial · Práctica guiada en JavaScript</p>
   <h1>Pilas, colas y búsqueda, programando</h1>
   <p class="lead">Diez pasos cortos, en orden. Cada uno trae un ejemplo que pueden cambiar y correr, y un ejercicio que se corrige solo. Empezamos poniendo un plato en una lista y terminamos con la amplitud y la profundidad sobre el mapa de un barrio. No hay que instalar nada.</p>
-  <div class="aviso"><b>Cómo se trabaja:</b> escriban en la caja negra y pulsen «Comprobar». Verde es que pasó todas las pruebas; rojo dice qué prueba falló y qué salió en vez de lo esperado. Si se traban, «Pista»; si siguen trabados después de dos intentos, aparece «Ver solución». Lo que escriben se guarda en este navegador. En el celular funciona; en la laptop se escribe mejor.</div>
+  <div class="aviso"><b>Cómo se trabaja:</b> escriban en la caja negra y pulsen «Comprobar». Verde es que pasó todas las pruebas; rojo dice qué prueba falló y qué salió en vez de lo esperado. Si se traban, «Pista»; si siguen trabados después de dos intentos, aparece «Ver solución». El botón «Ver paso a paso» corre el código línea por línea y dibuja al costado la pila, la cola y las demás variables en cada momento: úsenlo cada vez que no entiendan por qué sale lo que sale. Lo que escriben se guarda en este navegador. En el celular funciona; en la laptop se escribe mejor.</div>
   <div class="avance" id="avance"></div>
   <div id="pasos"></div>
 
@@ -85,17 +110,7 @@ footer.sitio a{color:var(--sage)}
 
 <script>
 // --------------------------------------------------------------------------- //
-// Los datos que usan los pasos 6 a 10: el barrio de la clase, con una vuelta
-// (Puerto - Estadio) para que la lista de visitados haga falta de verdad.
 // --------------------------------------------------------------------------- //
-const BARRIO = `const barrio = {
-  Plaza:    ["Mercado", "Colegio"],
-  Mercado:  ["Plaza", "Puerto"],
-  Colegio:  ["Plaza", "Hospital", "Estadio"],
-  Puerto:   ["Mercado", "Estadio"],
-  Hospital: ["Colegio"],
-  Estadio:  ["Colegio", "Puerto"]
-};`;
 
 const PASOS = [
 {id:'p1', titulo:'Una lista, y poner algo al final',
@@ -110,13 +125,23 @@ console.log(pila.length);   // cuántos platos hay`,
  inicial:`function apilar(pila, plato) {
   // 1. pongan el plato al final, con push
   // 2. devuelvan la pila, con return
-}`,
+}
+
+// Su prueba: declaren una lista y usen la función
+const platos = ["A", "B"];
+console.log(apilar(platos, "C"));
+console.log(platos);`,
  pruebas:[{expr:'apilar([], "A")', esperado:["A"]},{expr:'apilar(["A","B"], "C")', esperado:["A","B","C"]},{expr:'apilar(["taza"], "plato")', esperado:["taza","plato"]}],
  pista:'Son dos líneas dentro de la función: <code>pila.push(plato);</code> y <code>return pila;</code>. Sin el <code>return</code>, la función no devuelve nada.',
  solucion:`function apilar(pila, plato) {
   pila.push(plato);
   return pila;
-}`},
+}
+
+// Su prueba: declaren una lista y usen la función
+const platos = ["A", "B"];
+console.log(apilar(platos, "C"));
+console.log(platos);`},
 
 {id:'p2', titulo:'Desapilar: sacar el de arriba',
  explica:'<code>.pop()</code> saca el último elemento de la lista y lo devuelve. Como el último que entró está arriba, <code>pop</code> es «tomar el plato de arriba». A eso se le dice LIFO: el último en entrar es el primero en salir.',
@@ -128,12 +153,22 @@ console.log("otra vez:", pila.pop(), "y queda", pila);`,
  consigna:'Escriban <code>desapilar(pila)</code>: saca el elemento de arriba y lo devuelve. La pila tiene que quedar sin él.',
  inicial:`function desapilar(pila) {
   // saquen el de arriba y devuélvanlo
-}`,
+}
+
+// Su prueba
+const platos = ["A", "B", "C"];
+console.log("salió:", desapilar(platos));
+console.log("queda:", platos);`,
  pruebas:[{expr:'desapilar(["A","B","C"])', esperado:"C"},{expr:'(() => { const p = ["A","B","C"]; desapilar(p); return p; })()', esperado:["A","B"], nombre:'la pila después de desapilar ["A","B","C"]'},{expr:'desapilar(["solo"])', esperado:"solo"}],
  pista:'Una sola línea: <code>return pila.pop();</code>. Fíjense que <code>pop</code> ya hace las dos cosas: saca y devuelve.',
  solucion:`function desapilar(pila) {
   return pila.pop();
-}`},
+}
+
+// Su prueba
+const platos = ["A", "B", "C"];
+console.log("salió:", desapilar(platos));
+console.log("queda:", platos);`},
 
 {id:'p3', titulo:'La cola: sacar del frente',
  explica:'La fila de la fotocopiadora. La gente entra por el final, con <code>push</code>, igual que antes. Pero se atiende al del frente, el primero que llegó: eso en JavaScript es <code>.shift()</code>. Esa única palabra, <code>pop</code> o <code>shift</code>, es toda la diferencia entre una pila y una cola.',
@@ -145,12 +180,22 @@ console.log("atendido:", cola.shift());   // Luis`,
  consigna:'Escriban <code>atender(cola)</code>: saca a la persona del frente y la devuelve.',
  inicial:`function atender(cola) {
   // saquen al del frente y devuélvanlo
-}`,
+}
+
+// Su prueba
+const fila = ["Ana", "Luis", "Rosa"];
+console.log("atendido:", atender(fila));
+console.log("la fila:", fila);`,
  pruebas:[{expr:'atender(["Ana","Luis","Rosa"])', esperado:"Ana"},{expr:'(() => { const c = ["Ana","Luis"]; atender(c); return c; })()', esperado:["Luis"], nombre:'la cola después de atender ["Ana","Luis"]'},{expr:'atender(["Pedro"])', esperado:"Pedro"}],
  pista:'<code>return cola.shift();</code>. Si pusieron <code>pop</code>, van a atender a Rosa en vez de a Ana: eso sería una pila.',
  solucion:`function atender(cola) {
   return cola.shift();
-}`},
+}
+
+// Su prueba
+const fila = ["Ana", "Luis", "Rosa"];
+console.log("atendido:", atender(fila));
+console.log("la fila:", fila);`},
 
 {id:'p4', titulo:'Todos entran, todos salen: el orden',
  explica:'Si meten A, B y C y después sacan hasta vaciar, la pila devuelve C, B, A y la cola devuelve A, B, C. Para «sacar hasta vaciar» se usa un ciclo <code>while</code>: mientras quede algo, saca uno. La condición es <code>estructura.length &gt; 0</code>.',
@@ -173,7 +218,11 @@ console.log(salida);           // ["C","B","A"]
     // anoten en salida el que sale
   }
   return salida;
-}`,
+}
+
+// Su prueba
+console.log(ordenDeSalida(["A", "B", "C"], "pila"));
+console.log(ordenDeSalida(["A", "B", "C"], "cola"));`,
  pruebas:[{expr:'ordenDeSalida(["A","B","C"], "pila")', esperado:["C","B","A"]},{expr:'ordenDeSalida(["A","B","C"], "cola")', esperado:["A","B","C"]},{expr:'ordenDeSalida(["P","U","N","O"], "pila")', esperado:["O","N","U","P"]},{expr:'ordenDeSalida([], "cola")', esperado:[]}],
  pista:'Dentro del <code>while</code>: <code>if (tipo === "pila") salida.push(estructura.pop()); else salida.push(estructura.shift());</code>. Si el <code>while</code> queda vacío, nunca termina: la página lo corta a los dos segundos.',
  solucion:`function ordenDeSalida(elementos, tipo) {
@@ -190,7 +239,11 @@ console.log(salida);           // ["C","B","A"]
     }
   }
   return salida;
-}`},
+}
+
+// Su prueba
+console.log(ordenDeSalida(["A", "B", "C"], "pila"));
+console.log(ordenDeSalida(["A", "B", "C"], "cola"));`},
 
 {id:'p5', titulo:'Invertir una palabra con una pila',
  explica:'Un texto se recorre letra por letra con <code>for (const letra of palabra)</code>. Si cada letra entra a una pila y después salen todas, la palabra sale al revés: PUNO se vuelve ONUP. Para pegar letras a un texto se usa <code>+</code>; un texto vacío se escribe <code>""</code>.',
@@ -212,7 +265,10 @@ console.log(texto, texto.length);`,
     // saquen la letra de arriba y péguenla a resultado
   }
   return resultado;
-}`,
+}
+
+// Su prueba
+console.log(invertir("PUNO"));`,
  pruebas:[{expr:'invertir("PUNO")', esperado:"ONUP"},{expr:'invertir("ANA")', esperado:"ANA"},{expr:'invertir("Titicaca")', esperado:"acacitiT"},{expr:'invertir("")', esperado:""}],
  pista:'En el <code>for</code>: <code>pila.push(letra);</code>. En el <code>while</code>: <code>resultado = resultado + pila.pop();</code>.',
  solucion:`function invertir(palabra) {
@@ -225,28 +281,75 @@ console.log(texto, texto.length);`,
     resultado = resultado + pila.pop();
   }
   return resultado;
-}`},
+}
 
-{id:'p6', titulo:'El mapa: un objeto con los vecinos', datos:true,
- explica:'Un mapa de lugares y calles (un grafo) se guarda como un objeto: la clave es el lugar y el valor es la lista de sus vecinos. <code>barrio["Plaza"]</code> devuelve los vecinos de la Plaza. El barrio de la clase ya está escrito en la caja «Datos»; está disponible en todos los pasos que siguen, no hace falta copiarlo.',
- ejemplo:`console.log(barrio["Plaza"]);                // los vecinos de la Plaza
+// Su prueba
+console.log(invertir("PUNO"));`},
+
+{id:'p6', titulo:'El mapa: un objeto con los vecinos',
+ explica:'Un mapa de lugares y calles (un grafo) se guarda como un objeto: la clave es el lugar y el valor es la lista de sus vecinos. <code>barrio["Plaza"]</code> devuelve los vecinos de la Plaza. De aquí en adelante, el barrio de la clase está declarado al comienzo del código de cada ejercicio: léanlo, y cámbienlo si quieren probar con otro mapa.',
+ ejemplo:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+console.log(barrio["Plaza"]);                // los vecinos de la Plaza
 console.log(barrio.Colegio.length, "vecinos tiene el Colegio");
 for (const lugar in barrio) {
   console.log(lugar, "->", barrio[lugar].join(", "));
 }`,
  consigna:'Escriban <code>vecinosDe(mapa, lugar)</code>: devuelve la lista de vecinos de ese lugar. Si el lugar no existe en el mapa, devuelve una lista vacía.',
- inicial:`function vecinosDe(mapa, lugar) {
+ inicial:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function vecinosDe(mapa, lugar) {
   // busquen el lugar en el mapa; si no está, devuelvan []
-}`,
+}
+
+// Su prueba
+console.log(vecinosDe(barrio, "Plaza"));
+console.log(vecinosDe(barrio, "Luna"));`,
  pruebas:[{expr:'vecinosDe(barrio, "Plaza")', esperado:["Mercado","Colegio"]},{expr:'vecinosDe(barrio, "Hospital")', esperado:["Colegio"]},{expr:'vecinosDe(barrio, "Luna")', esperado:[]}],
  pista:'<code>return mapa[lugar] || [];</code>. El <code>||</code> dice: si lo de la izquierda no existe, usa lo de la derecha.',
- solucion:`function vecinosDe(mapa, lugar) {
-  return mapa[lugar] || [];
-}`},
+ solucion:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
 
-{id:'p7', titulo:'Amplitud (BFS): recorrer el barrio con una cola', datos:true,
+function vecinosDe(mapa, lugar) {
+  return mapa[lugar] || [];
+}
+
+// Su prueba
+console.log(vecinosDe(barrio, "Plaza"));
+console.log(vecinosDe(barrio, "Luna"));`},
+
+{id:'p7', titulo:'Amplitud (BFS): recorrer el barrio con una cola',
  explica:'Para recorrer el barrio desde un lugar sin repetir, se usan dos listas: una cola con los lugares pendientes (la <b>frontera</b>) y una lista de <b>visitados</b> (la memoria). En cada vuelta sale el del frente, se anota en el orden, y entran al final sus vecinos que todavía no estaban anotados. Con una cola salen primero los lugares a una calle, después los que están a dos. Eso es la amplitud.',
- ejemplo:`// la primera vuelta, a mano
+ ejemplo:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+// la primera vuelta, a mano
 const cola = ["Plaza"];
 const visitados = ["Plaza"];
 const actual = cola.shift();                   // sale la Plaza
@@ -260,7 +363,16 @@ console.log("salió:", actual);
 console.log("la cola:", cola);                 // Mercado y Colegio esperan
 console.log("visitados:", visitados);`,
  consigna:'Completen <code>amplitud(mapa, inicio)</code>: devuelve la lista de lugares en el orden en que salieron de la cola. Faltan dos palabras, marcadas con <code>???</code>.',
- inicial:`function amplitud(mapa, inicio) {
+ inicial:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function amplitud(mapa, inicio) {
   const cola = [inicio];
   const visitados = [inicio];
   const orden = [];
@@ -275,10 +387,22 @@ console.log("visitados:", visitados);`,
     }
   }
   return orden;
-}`,
+}
+
+// Su prueba
+console.log(amplitud(barrio, "Plaza"));`,
  pruebas:[{expr:'amplitud(barrio, "Plaza")', esperado:["Plaza","Mercado","Colegio","Puerto","Hospital","Estadio"]},{expr:'amplitud(barrio, "Hospital")', esperado:["Hospital","Colegio","Plaza","Estadio","Mercado","Puerto"]},{expr:'amplitud(barrio, "Puerto")', esperado:["Puerto","Mercado","Estadio","Plaza","Colegio","Hospital"]}],
  pista:'Es una cola: sale con <code>shift</code> y entra con <code>push</code>. Si ponen <code>pop</code> en la primera, el recorrido cambia de orden: pruébenlo y miren qué sale.',
- solucion:`function amplitud(mapa, inicio) {
+ solucion:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function amplitud(mapa, inicio) {
   const cola = [inicio];
   const visitados = [inicio];
   const orden = [];
@@ -293,11 +417,23 @@ console.log("visitados:", visitados);`,
     }
   }
   return orden;
-}`},
+}
 
-{id:'p8', titulo:'Profundidad (DFS): lo mismo, con una pila', datos:true,
+// Su prueba
+console.log(amplitud(barrio, "Plaza"));`},
+
+{id:'p8', titulo:'Profundidad (DFS): lo mismo, con una pila',
  explica:'Mismo código, cambia la estructura: ahora una pila. Sale el último que entró, así que el recorrido se mete por una rama hasta el fondo antes de volver. Dos detalles. Como un lugar puede entrar dos veces a la pila, aquí se anota como visitado al <b>salir</b>, y si ya estaba anotado se descarta con <code>continue</code>. Y los vecinos entran al revés, del último al primero, para que el primero de la lista quede arriba y salga primero.',
- ejemplo:`// la primera vuelta, a mano
+ ejemplo:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+// la primera vuelta, a mano
 const pila = ["Plaza"];
 const actual = pila.pop();                      // sale la Plaza
 const vecinos = barrio[actual];
@@ -308,7 +444,16 @@ console.log("salió:", actual);
 console.log("la pila:", pila, "<- el de la derecha está arriba");
 console.log("el siguiente en salir es:", pila[pila.length - 1]);`,
  consigna:'Completen <code>profundidad(mapa, inicio)</code>: devuelve el orden en que los lugares salen de la pila, sin repetidos. Faltan dos palabras, marcadas con <code>???</code>.',
- inicial:`function profundidad(mapa, inicio) {
+ inicial:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function profundidad(mapa, inicio) {
   const pila = [inicio];
   const visitados = [];
   const orden = [];
@@ -325,10 +470,22 @@ console.log("el siguiente en salir es:", pila[pila.length - 1]);`,
     }
   }
   return orden;
-}`,
+}
+
+// Su prueba
+console.log(profundidad(barrio, "Plaza"));`,
  pruebas:[{expr:'profundidad(barrio, "Plaza")', esperado:["Plaza","Mercado","Puerto","Estadio","Colegio","Hospital"]},{expr:'profundidad(barrio, "Hospital")', esperado:["Hospital","Colegio","Plaza","Mercado","Puerto","Estadio"]}],
  pista:'Es una pila: sale con <code>pop</code> y entra con <code>push</code>. Comparen el orden con el de la amplitud desde la Plaza: aquí el Puerto sale tercero, porque bajó por la rama del Mercado hasta el fondo.',
- solucion:`function profundidad(mapa, inicio) {
+ solucion:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function profundidad(mapa, inicio) {
   const pila = [inicio];
   const visitados = [];
   const orden = [];
@@ -345,11 +502,23 @@ console.log("el siguiente en salir es:", pila[pila.length - 1]);`,
     }
   }
   return orden;
-}`},
+}
 
-{id:'p9', titulo:'El camino más corto, con la cola', datos:true,
+// Su prueba
+console.log(profundidad(barrio, "Plaza"));`},
+
+{id:'p9', titulo:'El camino más corto, con la cola',
  explica:'La amplitud, además de recorrer, encuentra el camino con menos calles si guardamos de dónde llegamos a cada lugar: <code>padre[vecino] = actual</code>. Cuando la meta sale de la cola, se retrocede por los padres hasta el inicio y ese es el camino. Un objeto vacío se escribe <code>{}</code>; <code>unshift</code> pone un elemento al inicio de una lista.',
- ejemplo:`const padre = {};
+ ejemplo:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+const padre = {};
 padre["Mercado"] = "Plaza";       // al Mercado llegué desde la Plaza
 padre["Puerto"] = "Mercado";      // al Puerto llegué desde el Mercado
 let paso = "Puerto";
@@ -360,7 +529,16 @@ while (paso !== undefined) {      // retrocedo hasta que no haya padre
 }
 console.log(camino);              // ["Plaza","Mercado","Puerto"]`,
  consigna:'Completen <code>caminoMasCorto(mapa, inicio, meta)</code>: devuelve la lista de lugares desde el inicio hasta la meta con menos calles. Si no se llega, devuelve <code>[]</code>. Falta una línea, marcada con <code>???</code>.',
- inicial:`function caminoMasCorto(mapa, inicio, meta) {
+ inicial:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function caminoMasCorto(mapa, inicio, meta) {
   const cola = [inicio];
   const visitados = [inicio];
   const padre = {};
@@ -383,10 +561,22 @@ console.log(camino);              // ["Plaza","Mercado","Puerto"]`,
     paso = padre[paso];
   }
   return camino;
-}`,
+}
+
+// Su prueba
+console.log(caminoMasCorto(barrio, "Plaza", "Estadio"));`,
  pruebas:[{expr:'caminoMasCorto(barrio, "Plaza", "Estadio")', esperado:["Plaza","Colegio","Estadio"]},{expr:'caminoMasCorto(barrio, "Hospital", "Puerto")', esperado:["Hospital","Colegio","Estadio","Puerto"]},{expr:'caminoMasCorto(barrio, "Plaza", "Plaza")', esperado:["Plaza"]},{expr:'caminoMasCorto(barrio, "Plaza", "Luna")', esperado:[]}],
  pista:'La línea es <code>padre[vecino] = actual;</code>. Dice: «al vecino llegué desde actual». Con eso, retroceder desde la meta reconstruye el camino.',
- solucion:`function caminoMasCorto(mapa, inicio, meta) {
+ solucion:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function caminoMasCorto(mapa, inicio, meta) {
   const cola = [inicio];
   const visitados = [inicio];
   const padre = {};
@@ -409,16 +599,37 @@ console.log(camino);              // ["Plaza","Mercado","Puerto"]`,
     paso = padre[paso];
   }
   return camino;
-}`},
+}
 
-{id:'p10', titulo:'Reto: ¿cuánto trabajo hizo cada una?', datos:true,
+// Su prueba
+console.log(caminoMasCorto(barrio, "Plaza", "Estadio"));`},
+
+{id:'p10', titulo:'Reto: ¿cuánto trabajo hizo cada una?',
  explica:'En el Laboratorio 3 contaron «expandidos»: cuántos lugares salieron de la frontera antes de llegar a la meta. Aquí es lo mismo, en código, con <code>tipo</code> igual a <code>"cola"</code> o <code>"pila"</code>. Van a ver que ninguna gana siempre: para llegar al Estadio desde la Plaza la pila expande menos; para llegar al Hospital, la cola.',
- ejemplo:`// cuente a mano con el mapa: desde la Plaza hasta el Estadio
+ ejemplo:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+// cuente a mano con el mapa: desde la Plaza hasta el Estadio
 // con cola salen: Plaza, Mercado, Colegio, Puerto, Hospital, Estadio -> 6
 // con pila salen: Plaza, Mercado, Puerto, Estadio -> 4
 console.log(barrio.Plaza, barrio.Colegio, barrio.Puerto);`,
  consigna:'Completen <code>expandidosHasta(mapa, inicio, meta, tipo)</code>: devuelve cuántos lugares salieron de la frontera hasta sacar la meta, incluida la meta. Si nunca se llega, devuelve <code>-1</code>. Faltan dos valores, marcados con <code>???</code>.',
- inicial:`function expandidosHasta(mapa, inicio, meta, tipo) {
+ inicial:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function expandidosHasta(mapa, inicio, meta, tipo) {
   const frontera = [inicio];
   const visitados = [];
   let expandidos = 0;
@@ -436,10 +647,23 @@ console.log(barrio.Plaza, barrio.Colegio, barrio.Puerto);`,
     }
   }
   return ???;                                   // se vació sin llegar
-}`,
+}
+
+// Su prueba
+console.log("cola:", expandidosHasta(barrio, "Plaza", "Estadio", "cola"));
+console.log("pila:", expandidosHasta(barrio, "Plaza", "Estadio", "pila"));`,
  pruebas:[{expr:'expandidosHasta(barrio, "Plaza", "Estadio", "cola")', esperado:6},{expr:'expandidosHasta(barrio, "Plaza", "Estadio", "pila")', esperado:4},{expr:'expandidosHasta(barrio, "Plaza", "Hospital", "cola")', esperado:5},{expr:'expandidosHasta(barrio, "Plaza", "Hospital", "pila")', esperado:6},{expr:'expandidosHasta(barrio, "Plaza", "Luna", "cola")', esperado:-1}],
  pista:'El primer <code>???</code> es <code>expandidos</code>: el contador ya incluye la meta porque se sumó antes del <code>if</code>. El segundo es <code>-1</code>.',
- solucion:`function expandidosHasta(mapa, inicio, meta, tipo) {
+ solucion:`const barrio = {
+  Plaza:    ["Mercado", "Colegio"],
+  Mercado:  ["Plaza", "Puerto"],
+  Colegio:  ["Plaza", "Hospital", "Estadio"],
+  Puerto:   ["Mercado", "Estadio"],
+  Hospital: ["Colegio"],
+  Estadio:  ["Colegio", "Puerto"]
+};
+
+function expandidosHasta(mapa, inicio, meta, tipo) {
   const frontera = [inicio];
   const visitados = [];
   let expandidos = 0;
@@ -457,40 +681,106 @@ console.log(barrio.Plaza, barrio.Colegio, barrio.Puerto);`,
     }
   }
   return -1;
-}`},
+}
+
+// Su prueba
+console.log("cola:", expandidosHasta(barrio, "Plaza", "Estadio", "cola"));
+console.log("pila:", expandidosHasta(barrio, "Plaza", "Estadio", "pila"));`},
 ];
 
 // --------------------------------------------------------------------------- //
 // El probador: corre el código en un Worker aparte, con dos segundos de tope
 // --------------------------------------------------------------------------- //
-const CODIGO_WORKER = `
-function canon(v){ if(v===undefined) return "undefined"; if(Array.isArray(v)) return "["+v.map(canon).join(",")+"]"; if(v&&typeof v==="object") return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+canon(v[k])).join(",")+"}"; return JSON.stringify(v); }
-self.onmessage = function(e){
-  const {codigo, pruebas} = e.data;
-  const logs = [];
-  const consola = {log:(...a)=>logs.push(a.map(x=>typeof x==="string"?x:JSON.stringify(x)).join(" "))};
-  consola.error = consola.warn = consola.info = consola.log;
-  let res = [], error = null;
-  try {
-    const armar = new Function("console", codigo + "\\n;return function(__e){ return eval(__e); };");
-    const evaluar = armar(consola);
-    for (const p of pruebas) {
-      try { const v = evaluar(p.expr); res.push({ok: canon(v) === canon(p.esperado), obtenido: canon(v)}); }
-      catch (err) { res.push({ok:false, obtenido:"error: " + err.message}); }
+// --------------------------------------------------------------------------- //
+// Seguir el código línea por línea: se mete una llamada __t(n, variables) antes
+// de cada instrucción que está a nivel de bloque (no dentro de paréntesis ni de
+// un objeto literal), y el Worker guarda una foto de las variables en cada una.
+// --------------------------------------------------------------------------- //
+function instrumentar(codigo) {
+  var nombres = [];
+  function agrega(n) { if (n && /^[A-Za-z_$][\w$]*$/.test(n) && nombres.indexOf(n) < 0 && nombres.length < 14) nombres.push(n); }
+  var re1 = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g, m;
+  while ((m = re1.exec(codigo))) agrega(m[1]);
+  var re2 = /\bfunction\s+[\w$]*\s*\(([^)]*)\)/g;
+  while ((m = re2.exec(codigo))) m[1].split(',').forEach(function (s) { agrega(s.trim().split('=')[0].trim()); });
+  var snap = '{' + nombres.map(function (n) { return JSON.stringify(n) + ':(function(){try{return ' + n + '}catch(e){return __u}})()'; }).join(',') + '}';
+  var BT = String.fromCharCode(96);
+  var lineas = codigo.split('\n');
+  var pila = [], cadena = null, comentario = false, salida = [];
+  for (var i = 0; i < lineas.length; i++) {
+    var linea = lineas[i], tx = linea.trim();
+    var libre = !cadena && !comentario && pila.every(function (x) { return x === '{b'; });
+    var inicio = tx && !/^[}\])]/.test(tx) && !/^(else\b|case\b|default\b|catch\b|finally\b|\.|\/\/|\/\*|\*)/.test(tx);
+    if (libre && inicio) salida.push(linea.match(/^\s*/)[0] + '__t(' + (i + 1) + ',' + snap + ');');
+    salida.push(linea);
+    var prev = '';
+    for (var k = 0; k < linea.length; k++) {
+      var c = linea[k], sig = linea[k + 1];
+      if (comentario) { if (c === '*' && sig === '/') { comentario = false; k++; } continue; }
+      if (cadena) { if (c === '\\') { k++; continue; } if (c === cadena) cadena = null; continue; }
+      if (c === '/' && sig === '/') break;
+      if (c === '/' && sig === '*') { comentario = true; k++; continue; }
+      if (c === '"' || c === "'" || c === BT) { cadena = c; continue; }
+      if (c === '(' || c === '[') pila.push(c);
+      else if (c === '{') pila.push(/[=(,:\[?]$|return$/.test(prev) ? '{o' : '{b');
+      else if (c === ')' || c === ']' || c === '}') pila.pop();
+      if (!/\s/.test(c)) prev = (prev + c).slice(-6);
     }
-  } catch (err) { error = err.message; }
-  self.postMessage({res, logs, error});
-};`;
-const urlWorker = URL.createObjectURL(new Blob([CODIGO_WORKER], {type:'application/javascript'}));
+  }
+  salida.push('__t(0,' + snap + ');');
+  return {codigo: salida.join('\n'), nombres: nombres};
+}
 
-function correr(codigo, pruebas) {
+function cuerpoWorker() {
+  var __u = {__sinValor: true};
+  function clonar(v, prof) {
+    if (v === __u || v === undefined) return {__sinValor: true};
+    if (v === null) return null;
+    if (typeof v === 'function') return '[función]';
+    if (Array.isArray(v)) return prof > 4 ? '[…]' : v.map(function (x) { return clonar(x, prof + 1); });
+    if (typeof v === 'object') { if (prof > 4) return '{…}'; var o = {}; for (var k in v) o[k] = clonar(v[k], prof + 1); return o; }
+    return v;
+  }
+  self.onmessage = function (e) {
+    var codigo = e.data.codigo, pruebas = e.data.pruebas, trazar = e.data.trazar;
+    var logs = [];
+    var consola = {log: function () { logs.push(Array.prototype.map.call(arguments, function (x) { return typeof x === 'string' ? x : JSON.stringify(x); }).join(' ')); }};
+    consola.error = consola.warn = consola.info = consola.log;
+    if (trazar) {
+      var pasos = [], error = null, limite = false, nombres = [];
+      try { new Function(codigo); } catch (err) { self.postMessage({pasos: pasos, logs: logs, error: 'No se puede leer el código: ' + err.message, limite: false, nombres: nombres}); return; }
+      var inst = instrumentar(codigo); nombres = inst.nombres;
+      var armar;
+      try { armar = new Function('console', '__t', '__u', inst.codigo); }
+      catch (err) { self.postMessage({pasos: pasos, logs: logs, error: '__INSTR__', limite: false, nombres: nombres}); return; }
+      var __t = function (linea, vars) { if (pasos.length >= 400) { limite = true; throw new Error('__LIMITE__'); } pasos.push({linea: linea, vars: clonar(vars, 0)}); };
+      try { armar(consola, __t, __u); } catch (err) { if (!/__LIMITE__/.test(String(err && err.message))) error = String(err && err.message); }
+      self.postMessage({pasos: pasos, logs: logs, error: error, limite: limite, nombres: nombres});
+      return;
+    }
+    var res = [], error2 = null;
+    try {
+      var armar2 = new Function('console', codigo + '\n;return function(__e){ return eval(__e); };');
+      var evaluar = armar2(consola);
+      for (var i = 0; i < pruebas.length; i++) {
+        var pr = pruebas[i];
+        try { var v = evaluar(pr.expr); res.push({ok: canon(v) === canon(pr.esperado), obtenido: canon(v)}); }
+        catch (err) { res.push({ok: false, obtenido: 'error: ' + err.message}); }
+      }
+    } catch (err) { error2 = err.message; }
+    self.postMessage({res: res, logs: logs, error: error2});
+  };
+}
+const urlWorker = URL.createObjectURL(new Blob([instrumentar.toString() + '\n' + canon.toString() + '\n(' + cuerpoWorker.toString() + ')();'], {type: 'application/javascript'}));
+
+function correr(codigo, pruebas, trazar) {
   return new Promise(resolve => {
     let w;
     try { w = new Worker(urlWorker); } catch (e) { resolve({error:'Este navegador no deja crear el probador: ' + e, res:[], logs:[]}); return; }
-    const reloj = setTimeout(() => { w.terminate(); resolve({colgado:true, res:[], logs:[]}); }, 2000);
+    const reloj = setTimeout(() => { w.terminate(); resolve({colgado:true, res:[], logs:[], pasos:[]}); }, trazar ? 4000 : 2000);
     w.onmessage = ev => { clearTimeout(reloj); w.terminate(); resolve(ev.data); };
     w.onerror = ev => { clearTimeout(reloj); w.terminate(); resolve({error: ev.message, res:[], logs:[]}); };
-    w.postMessage({codigo, pruebas});
+    w.postMessage({codigo, pruebas, trazar: !!trazar});
   });
 }
 
@@ -515,12 +805,12 @@ function pintar() {
       <p class="kicker">Paso ${i + 1} de ${PASOS.length}${p.id === 'p10' ? ' · reto' : ''}</p>
       <h2>${esc(p.titulo)}<span class="ok" id="${p.id}-ok">${g.listo ? '✓ listo' : ''}</span></h2>
       <p class="explica">${p.explica}</p>
-      ${p.datos ? `<div class="bloque"><p class="rotulo">Datos · el barrio de la clase, ya cargado en este paso</p><pre class="datos">${esc(BARRIO)}</pre></div>` : ''}
       <div class="bloque">
         <p class="rotulo">Ejemplo para jugar · cámbienlo y córranlo</p>
         <textarea id="${p.id}-ej" spellcheck="false" aria-label="Ejemplo del paso ${i + 1}">${esc(p.ejemplo)}</textarea>
-        <div class="fila"><button type="button" data-ejecutar="${p.id}">Ejecutar</button><button type="button" class="suave" data-restaurar-ej="${p.id}">Volver al ejemplo original</button></div>
+        <div class="fila"><button type="button" data-ejecutar="${p.id}">Ejecutar</button><button type="button" data-trazar="${p.id}-ej">Ver paso a paso</button><button type="button" class="suave" data-restaurar-ej="${p.id}">Volver al ejemplo original</button></div>
         <div class="salida vacia" id="${p.id}-ej-salida">Aquí aparece lo que imprime console.log.</div>
+        <div class="traza oculto" id="${p.id}-ej-traza"></div>
       </div>
       <div class="bloque ejercicio">
         <p class="rotulo">Ahora ustedes</p>
@@ -528,12 +818,14 @@ function pintar() {
         <textarea id="${p.id}-cod" spellcheck="false" aria-label="Código del ejercicio ${i + 1}">${esc(g.codigo || p.inicial)}</textarea>
         <div class="fila">
           <button type="button" class="principal" data-comprobar="${p.id}">Comprobar</button>
+          <button type="button" data-trazar="${p.id}-cod">Ver paso a paso</button>
           <button type="button" data-pista="${p.id}">Pista</button>
           <button type="button" data-solucion="${p.id}" id="${p.id}-btn-sol" class="${(g.intentos || 0) >= 2 || g.listo ? '' : 'oculto'}">Ver solución</button>
           <button type="button" data-reiniciar="${p.id}">Borrar y empezar de nuevo</button>
         </div>
         <div class="pista oculto" id="${p.id}-pista">${p.pista}</div>
         <div class="solucion oculto" id="${p.id}-sol"><b>Una solución</b> (hay otras válidas):<pre>${esc(p.solucion)}</pre></div>
+        <div class="traza oculto" id="${p.id}-cod-traza"></div>
         <div id="${p.id}-res"></div>
       </div>
     </section>`;
@@ -542,6 +834,7 @@ function pintar() {
   document.querySelectorAll('[data-ejecutar]').forEach(b => b.addEventListener('click', () => ejecutarEjemplo(b.dataset.ejecutar)));
   document.querySelectorAll('[data-restaurar-ej]').forEach(b => b.addEventListener('click', () => { const p = PASOS.find(x => x.id === b.dataset.restaurarEj); $(p.id + '-ej').value = p.ejemplo; }));
   document.querySelectorAll('[data-comprobar]').forEach(b => b.addEventListener('click', () => comprobar(b.dataset.comprobar)));
+  document.querySelectorAll('[data-trazar]').forEach(b => b.addEventListener('click', () => trazar(b.dataset.trazar)));
   document.querySelectorAll('[data-pista]').forEach(b => b.addEventListener('click', () => $(b.dataset.pista + '-pista').classList.toggle('oculto')));
   document.querySelectorAll('[data-solucion]').forEach(b => b.addEventListener('click', () => $(b.dataset.solucion + '-sol').classList.toggle('oculto')));
   document.querySelectorAll('[data-reiniciar]').forEach(b => b.addEventListener('click', () => {
@@ -562,7 +855,7 @@ function pintarAvance() {
     + `<span>${listos} de ${PASOS.length} pasos listos${listos === PASOS.length ? ' · terminaron la ruta' : ''}</span>`;
 }
 
-function prelude(p) { return p.datos ? BARRIO + '\n' : ''; }
+function prelude(p) { return ''; }
 
 async function ejecutarEjemplo(id) {
   const p = PASOS.find(x => x.id === id);
@@ -603,6 +896,115 @@ async function comprobar(id) {
   }
   if (intentos >= 2 || leer(id).listo) $(id + '-btn-sol').classList.remove('oculto');
   pintarAvance();
+}
+
+// --------------------------------------------------------------------------- //
+// El paso a paso: el código a la izquierda, las variables a la derecha
+// --------------------------------------------------------------------------- //
+const TRAZAS = {};
+async function trazar(key) {
+  const codigo = $(key).value;
+  const cont = $(key + '-traza');
+  cont.classList.remove('oculto');
+  detener(key);
+  if (codigo.includes('???')) { cont.innerHTML = '<div class="veredicto mal">Todavía hay «???» en el código: complétenlo antes de verlo paso a paso.</div>'; return; }
+  cont.innerHTML = '<div class="veredicto">Siguiendo el código línea por línea…</div>';
+  const r = await correr(codigo, [], true);
+  if (r.colgado) { cont.innerHTML = '<div class="veredicto mal">El código no termina: se quedó en un ciclo.<small>Revisen la condición del while.</small></div>'; return; }
+  if (r.error === '__INSTR__') { cont.innerHTML = '<div class="veredicto mal">No pude seguirlo línea por línea.<small>Escriban una instrucción por línea, sin partir una expresión en varias líneas, y vuelvan a intentar. «Ejecutar» y «Comprobar» funcionan igual.</small></div>'; return; }
+  if (!r.pasos || !r.pasos.length) { cont.innerHTML = '<div class="veredicto mal">' + (r.error ? 'Error antes de empezar: ' + esc(r.error) : 'No hubo nada que seguir.') + '</div>'; return; }
+  // los objetos que nunca cambian (el mapa) van al final y en una sola línea
+  const constantes = new Set(r.nombres.filter(n => {
+    const vals = r.pasos.map(s => s.vars[n]).filter(v => !sinValor(v));
+    return vals.length && vals[0] && typeof vals[0] === 'object' && !Array.isArray(vals[0]) && vals.every(v => canon(v) === canon(vals[0]));
+  }));
+  const nombres = r.nombres.filter(n => !constantes.has(n)).concat(r.nombres.filter(n => constantes.has(n)));
+  TRAZAS[key] = {pasos: r.pasos, codigo, nombres, constantes, idx: 0, error: r.error, limite: r.limite, timer: null};
+  renderTraza(key);
+  cont.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+}
+function renderTraza(key) {
+  const T = TRAZAS[key]; const cont = $(key + '-traza');
+  const lineas = T.codigo.split('\n');
+  cont.innerHTML = `<div class="traza-controles">
+      <button type="button" data-tz="${key}" data-acc="inicio" title="Volver al inicio">⟲</button>
+      <button type="button" data-tz="${key}" data-acc="atras">◀ Atrás</button>
+      <button type="button" class="principal" data-tz="${key}" data-acc="play">▶ Reproducir</button>
+      <button type="button" data-tz="${key}" data-acc="paso">Paso ▶</button>
+      <input type="range" min="0" max="${T.pasos.length - 1}" value="0" data-tz="${key}" aria-label="Paso del programa">
+      <span class="contador" id="${key}-contador"></span>
+      <button type="button" data-tz="${key}" data-acc="cerrar">Cerrar</button>
+    </div>
+    <p class="donde" id="${key}-donde"></p>
+    <div class="traza-cuerpo">
+      <pre class="traza-codigo" id="${key}-codigo">${lineas.map((l, i) => `<span class="ln" id="${key}-l${i + 1}"><b>${i + 1}</b>${esc(l)}</span>`).join('')}</pre>
+      <div class="traza-diagrama" id="${key}-diagrama"></div>
+    </div>
+    ${T.limite ? '<p class="nota">Me detuve a los 400 pasos: el programa es más largo que eso, o no termina.</p>' : ''}
+    ${T.error ? `<p class="nota mal">El programa se cortó con un error: ${esc(T.error)}</p>` : ''}`;
+  cont.querySelectorAll('[data-acc]').forEach(b => b.addEventListener('click', () => accionTraza(key, b.dataset.acc)));
+  cont.querySelector('input[type=range]').addEventListener('input', ev => { detener(key); T.idx = +ev.target.value; pintarPaso(key); });
+  pintarPaso(key);
+}
+function accionTraza(key, acc) {
+  const T = TRAZAS[key]; if (!T) return;
+  if (acc === 'cerrar') { detener(key); $(key + '-traza').classList.add('oculto'); return; }
+  if (acc === 'play') {
+    if (T.timer) { detener(key); return; }
+    if (T.idx >= T.pasos.length - 1) T.idx = 0;
+    T.timer = setInterval(() => { if (T.idx < T.pasos.length - 1) { T.idx++; pintarPaso(key); } else detener(key); }, 750);
+    $(key + '-traza').querySelector('[data-acc=play]').textContent = '⏸ Pausar';
+    return;
+  }
+  detener(key);
+  if (acc === 'inicio') T.idx = 0;
+  else if (acc === 'atras') T.idx = Math.max(0, T.idx - 1);
+  else if (acc === 'paso') T.idx = Math.min(T.pasos.length - 1, T.idx + 1);
+  pintarPaso(key);
+}
+function detener(key) {
+  const T = TRAZAS[key]; if (T && T.timer) { clearInterval(T.timer); T.timer = null; }
+  const cont = $(key + '-traza'); const b = cont && cont.querySelector('[data-acc=play]'); if (b) b.textContent = '▶ Reproducir';
+}
+function sinValor(v) { return v === undefined || (v && typeof v === 'object' && v.__sinValor); }
+function fmtVal(v) {
+  if (sinValor(v)) return '—';
+  if (typeof v === 'string') return '"' + v + '"';
+  if (v === null) return 'null';
+  if (typeof v === 'object') return canon(v);
+  return String(v);
+}
+function dibujarValor(n, v, antes) {
+  if (sinValor(v)) return '<span class="sin">— (todavía no existe)</span>';
+  const nn = n.toLowerCase();
+  if (Array.isArray(v)) {
+    if (!v.length) return '<span class="sin">[ ] vacía</span>';
+    const prevArr = Array.isArray(antes) ? antes : [];
+    const chips = v.map((x, i) => `<span class="chip ${canon(prevArr[i]) !== canon(x) ? 'new' : ''}">${esc(fmtVal(x))}</span>`);
+    if (/pila/.test(nn)) return `<div class="pilav"><span class="marca">arriba ↓ (sale primero)</span>${chips.slice().reverse().join('')}<span class="marca">fondo</span></div>`;
+    if (/cola|fila|frontera/.test(nn)) return `<div class="colah"><span class="marca">frente →</span>${chips.join('')}<span class="marca">← final</span></div>`;
+    return `<div class="lista">${chips.join('')}</div>`;
+  }
+  if (v && typeof v === 'object') {
+    const keys = Object.keys(v); if (!keys.length) return '<span class="sin">{ } vacío</span>';
+    return `<div class="lista">${keys.map(k => `<span class="chip obj">${esc(k)} → ${esc(fmtVal(v[k]))}</span>`).join('')}</div>`;
+  }
+  return `<span class="escalar">${esc(fmtVal(v))}</span>`;
+}
+function pintarPaso(key) {
+  const T = TRAZAS[key]; const p = T.pasos[T.idx]; const prev = T.idx > 0 ? T.pasos[T.idx - 1] : null;
+  const cont = $(key + '-traza');
+  cont.querySelectorAll('.ln').forEach(l => l.classList.remove('hl'));
+  if (p.linea > 0) { const l = $(key + '-l' + p.linea); if (l) { l.classList.add('hl'); l.scrollIntoView({block: 'nearest'}); } }
+  $(key + '-contador').textContent = `paso ${T.idx + 1} / ${T.pasos.length}`;
+  $(key + '-donde').textContent = p.linea > 0 ? `Estado justo antes de ejecutar la línea ${p.linea}` : 'Estado al terminar el programa';
+  cont.querySelector('input[type=range]').value = T.idx;
+  $(key + '-diagrama').innerHTML = T.nombres.map(n => {
+    const v = p.vars[n]; const antes = prev ? prev.vars[n] : undefined;
+    const cambio = prev && canon(v) !== canon(antes);
+    if (T.constantes.has(n)) return `<div class="var"><div class="var-nombre">${esc(n)}</div><span class="sin">${sinValor(v) ? '— (todavía no existe)' : 'objeto con ' + Object.keys(v).length + ' entradas · no cambia en todo el programa'}</span></div>`;
+    return `<div class="var ${cambio ? 'cambio' : ''}"><div class="var-nombre">${esc(n)}</div>${dibujarValor(n, v, antes)}</div>`;
+  }).join('') || '<p class="nota">No hay variables declaradas para mostrar: declaren alguna con const o let.</p>';
 }
 
 pintar();
