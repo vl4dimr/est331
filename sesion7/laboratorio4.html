@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio 4 · Rutas con A* y búsqueda local · EST331</title>
+<style>
+  :root { --crema:#fbf7ef; --papel:#ffffff; --tinta:#1f2a22; --salvia:#42654e; --terracota:#a64c28; --gris:#6b6e66; --linea:#ded6c4; --oro:#d9a441; --lago:#dbe9ee; --codigo:#1f2a22; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--crema); color:var(--tinta); font:18px/1.55 Georgia, "Times New Roman", serif; }
+  .marco { max-width:980px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  header { padding-block:28px 8px; }
+  .kicker { font:600 13px system-ui, sans-serif; letter-spacing:.1em; text-transform:uppercase; color:var(--terracota); margin:0; }
+  h1 { font-size:36px; line-height:1.1; color:var(--salvia); margin:6px 0 10px; text-wrap:balance; }
+  h2 { font-size:26px; color:var(--salvia); margin:34px 0 8px; text-wrap:balance; }
+  h3 { font-size:19px; margin:18px 0 6px; }
+  p { margin:0 0 10px; max-width:70ch; }
+  code, pre, textarea { font-family:Consolas, "Cascadia Mono", monospace; }
+  code { background:#efe9db; padding:1px 5px; border-radius:4px; font-size:.9em; }
+  .datos { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:18px; align-items:start; }
+  svg { width:100%; height:auto; background:#fff; border:1px solid var(--linea); border-radius:14px; }
+  .arista { stroke:#aeb9ae; stroke-width:3; } .peso { font:13px system-ui, sans-serif; fill:var(--gris); }
+  .nodo circle { fill:#fbf7ef; stroke:var(--salvia); stroke-width:3; } .nodo text { font:bold 13px Georgia, serif; fill:var(--tinta); }
+  .lago { fill:var(--lago); }
+  pre.bloque { background:var(--papel); border:1px solid var(--linea); border-radius:10px; padding:10px 12px; font-size:13.5px; overflow-x:auto; margin:0; }
+  .parte { background:var(--papel); border:1px solid var(--linea); border-radius:14px; padding:16px 18px 18px; margin-top:16px; }
+  .parte h2 { margin-top:0; }
+  .pide { border-left:5px solid var(--salvia); padding:4px 12px; background:#f3f6f1; border-radius:6px; margin:8px 0 12px; }
+  .pide p { margin:4px 0; }
+  textarea { width:100%; min-height:300px; font-size:14px; line-height:1.45; padding:10px 12px; border:1px solid var(--linea); border-radius:10px; background:#fffdf8; color:var(--codigo); resize:vertical; tab-size:2; }
+  .botones { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  button { font:600 15px system-ui, sans-serif; padding:7px 14px; border:2px solid var(--salvia); background:#fff; color:var(--salvia); border-radius:9px; cursor:pointer; }
+  button.principal { background:var(--salvia); color:#fff; }
+  button.suave { border-color:var(--linea); color:var(--gris); }
+  .salida { font:14px/1.5 system-ui, sans-serif; background:var(--crema); border:1px dashed var(--linea); border-radius:10px; padding:8px 12px; min-height:2.5em; white-space:pre-wrap; overflow-x:auto; }
+  .salida .ok { color:var(--salvia); font-weight:700; } .salida .mal { color:var(--terracota); font-weight:700; } .salida .log { color:var(--gris); }
+  details.pista { margin-top:8px; border:1px dashed var(--linea); border-radius:10px; padding:6px 12px; }
+  details.pista summary { cursor:pointer; color:var(--terracota); font-weight:700; }
+  table.res { border-collapse:collapse; font:15px system-ui, sans-serif; margin-top:8px; }
+  table.res td, table.res th { border-bottom:1px solid var(--linea); padding:4px 10px; text-align:left; }
+  ol.informe li { margin-bottom:8px; max-width:70ch; }
+  footer { margin-top:36px; padding-block:18px 40px; border-top:1px solid var(--linea); font-size:14px; color:var(--gris); }
+  @media (max-width:760px) { .datos { grid-template-columns:minmax(0,1fr); } h1 { font-size:28px; } }
+</style>
+</head>
+<body>
+<header class="marco">
+  <p class="kicker">EST331 · Inteligencia Artificial · Laboratorio 4</p>
+  <h1>Rutas con A* y la ruta del camión</h1>
+  <p>Cuatro partes, en parejas. Primero programan <b>A*</b> sobre el mapa real de la clase. Con A* arman la <b>tabla de distancias</b> entre todos los pueblos. Con esa tabla programan el <b>ascenso de colina</b> y el <b>recocido simulado</b> para el camión que sale de Juliaca, pasa por los seis pueblos y vuelve.</p>
+  <p>Cada parte tiene su editor y su botón <b>Probar</b>: el código corre en esta misma página y las pruebas dicen qué está bien y qué falta. Lo que escriben se guarda solo en este navegador.</p>
+</header>
+
+<main class="marco">
+  <h2>Los datos</h2>
+  <div class="datos">
+    <svg viewBox="0 0 640 470" aria-label="Mapa de carreteras" id="mapa">
+      <path class="lago" d="M 468 215 C 515 250, 470 360, 445 470 L 640 470 L 640 160 C 600 175, 525 185, 468 215 Z"/>
+      <g id="aristas"></g><g id="nodos"></g>
+    </svg>
+    <div>
+      <p>Ya están cargados en cada editor; no hace falta copiarlos.</p>
+      <pre class="bloque">PUEBLOS     // {A:"Azángaro", H:"Huancané", T:"Taraco", J:"Juliaca",
+            //  C:"Coata", L:"Lampa", U:"Puno"}
+CARRETERAS  // [["T","H",28], ["T","J",33], …]  diez, en km
+vecinosDe(x)        // [{a:"J", km:33}, …] las carreteras de x
+lineaRecta(x, y)    // km en línea recta, por coordenadas
+crearAzar(semilla)  // una función que da números entre 0 y 1,
+                    // siempre los mismos para la misma semilla
+BASE = "J"          // el camión sale de Juliaca y vuelve</pre>
+      <p style="margin-top:10px">Kilómetros reales por carretera (OSRM sobre OpenStreetMap, noviembre de 2026), los de la clase de A*. Las coordenadas son las de la plaza de cada pueblo, redondeadas: la línea recta nunca pasa a la carretera.</p>
+    </div>
+  </div>
+
+  <section class="parte" id="p1">
+    <h2>Parte 1 · A* de cualquier pueblo a cualquier otro</h2>
+    <div class="pide"><p>Escriban <code>aEstrella(inicio, meta)</code>. Devuelve <code>{ camino, km, expandidos }</code>: la lista de pueblos del camino, los kilómetros y cuántos nodos expandió. La heurística es <code>lineaRecta(n, meta)</code>.</p>
+      <p>Las reglas de clase: se expande el de menor f = g + h; un nodo cuenta como expandido cuando sale de la frontera; si llega a uno que ya está en la frontera por un camino más barato, se actualiza.</p></div>
+    <textarea id="c1" spellcheck="false"></textarea>
+    <div class="botones"><button class="principal" data-probar="1">Probar</button><button class="suave" data-restaurar="1">Volver al código inicial</button></div>
+    <div class="salida" id="s1"></div>
+    <details class="pista"><summary>Pista</summary><p>Guarden la frontera como un arreglo de objetos <code>{n, g, f, padre}</code> y en cada vuelta saquen el de menor f con un <code>for</code>. Un objeto <code>mejorG</code> recuerda el mejor g conocido de cada pueblo; un objeto <code>padre</code> permite reconstruir el camino al final, de la meta hacia atrás.</p></details>
+  </section>
+
+  <section class="parte" id="p2">
+    <h2>Parte 2 · La tabla de distancias del camión</h2>
+    <div class="pide"><p>Escriban <code>tablaDistancias()</code>, que usa su <code>aEstrella</code> de la parte 1 para llenar <code>D[a][b]</code> con los kilómetros entre cada par de pueblos. Es la tabla que vimos en clase: Huancané y Coata no tienen carretera directa, y aun así D.H.C tiene que dar 63.</p></div>
+    <textarea id="c2" spellcheck="false"></textarea>
+    <div class="botones"><button class="principal" data-probar="2">Probar</button><button class="suave" data-restaurar="2">Volver al código inicial</button></div>
+    <div class="salida" id="s2"></div>
+  </section>
+
+  <section class="parte" id="p3">
+    <h2>Parte 3 · Ascenso de colina</h2>
+    <div class="pide"><p>Escriban <code>kmRuta(orden)</code>: los kilómetros de Juliaca, los seis pueblos en ese orden, y de vuelta a Juliaca. Después <code>vecinas(orden)</code>: las 15 rutas que salen de intercambiar dos posiciones, con i &lt; j, en ese orden. Y <code>colina(orden)</code>: se mueve a la mejor vecina mientras mejore. Devuelve <code>{ ruta, km, pasos }</code>.</p>
+      <p>En clase: desde <code>HATULC</code> (442 km) la colina se atasca en 372; desde <code>ACHTLU</code> llega a 353.</p></div>
+    <textarea id="c3" spellcheck="false"></textarea>
+    <div class="botones"><button class="principal" data-probar="3">Probar</button><button class="suave" data-restaurar="3">Volver al código inicial</button></div>
+    <div class="salida" id="s3"></div>
+  </section>
+
+  <section class="parte" id="p4">
+    <h2>Parte 4 · Recocido simulado, y el experimento</h2>
+    <div class="pide"><p>Escriban <code>recocido(orden, T0, enfria, iteraciones, azar)</code>. En cada iteración: una vecina al azar (dos posiciones distintas con <code>azar()</code>); si mejora o empata, se acepta; si es peor por Δ, se acepta si <code>azar() &lt; Math.exp(-Δ / T)</code>. Después, <code>T = T * enfria</code>. Devuelve la mejor ruta que vio: <code>{ ruta, km }</code>.</p>
+      <p>Cuando pasen las pruebas, el botón <b>Experimento</b> corre su recocido 200 veces desde la ruta atascada de 372 con cada configuración y cuenta cuántas llegan a 353. Copien la tabla al informe.</p></div>
+    <textarea id="c4" spellcheck="false"></textarea>
+    <div class="botones"><button class="principal" data-probar="4">Probar</button><button data-experimento="4">Experimento</button><button class="suave" data-restaurar="4">Volver al código inicial</button></div>
+    <div class="salida" id="s4"></div>
+  </section>
+
+  <section class="parte">
+    <h2>El informe · lo que se entrega</h2>
+    <p>Un PDF por pareja, con su código de las cuatro partes (pueden copiarlo de los editores) y estas respuestas:</p>
+    <ol class="informe">
+      <li>De Taraco a Puno, ¿cuántos nodos expandió su A*? ¿Y de Huancané a Lampa? ¿Coinciden con lo que hicimos a mano en clase?</li>
+      <li>Cambien la heurística por <code>0</code> en su A*. ¿Qué algoritmo de la clase pasada es ahora? ¿Cuántos nodos expande de Taraco a Puno?</li>
+      <li>Pongan <code>lineaRecta(n, meta) * 3</code>. Busquen un par de pueblos donde A* ya no dé el camino más corto. ¿Por qué pasa?</li>
+      <li>La tabla del experimento de la parte 4. ¿Qué configuración llega más veces a 353 y por qué?</li>
+      <li>Inventen una configuración propia (otra T0 u otro enfriamiento) que llegue a 353 más de 180 veces de 200. ¿Cuántas iteraciones le hicieron falta?</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="marco">
+  <p>EST331 · Inteligencia Artificial · FINESI · UNA Puno · 2026-II. Kilómetros por carretera: OSRM sobre OpenStreetMap, noviembre de 2026, redondeados al kilómetro.</p>
+  <p><button class="suave" id="borrar">Borrar mi código de este navegador</button></p>
+</footer>
+
+<script>
+"use strict";
+// ---------- los datos, compartidos por la página y por cada prueba ---------- //
+const PRELUDIO = String.raw`
+const PUEBLOS = { A:"Azángaro", H:"Huancané", T:"Taraco", J:"Juliaca", C:"Coata", L:"Lampa", U:"Puno" };
+const CARRETERAS = [["T","H",28],["T","J",33],["T","C",35],["T","A",61],["J","C",21],["J","U",43],["J","L",35],["J","A",74],["C","U",45],["A","L",78]];
+const COORD = { A:[-14.908,-70.196], H:[-15.204,-69.762], T:[-15.310,-69.977], J:[-15.500,-70.133], C:[-15.555,-69.950], L:[-15.364,-70.366], U:[-15.840,-70.022] };
+const BASE = "J";
+function vecinosDe(x) { const r = []; for (const [a, b, km] of CARRETERAS) { if (a === x) r.push({ a: b, km }); else if (b === x) r.push({ a, km }); } return r; }
+function lineaRecta(x, y) {
+  const [la1, lo1] = COORD[x], [la2, lo2] = COORD[y], R = 6371, rad = Math.PI / 180;
+  const dp = (la2 - la1) * rad, dl = (lo2 - lo1) * rad;
+  const s = Math.sin(dp / 2) ** 2 + Math.cos(la1 * rad) * Math.cos(la2 * rad) * Math.sin(dl / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+function crearAzar(semilla) { let a = semilla >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+`;
+
+const INICIAL = {
+1: `// Parte 1 · A* de inicio a meta. Devuelve { camino, km, expandidos }.
+function aEstrella(inicio, meta) {
+  const frontera = [{ n: inicio, g: 0, f: lineaRecta(inicio, meta) }];
+  const mejorG = { [inicio]: 0 };
+  const padre = {};
+  const cerrados = new Set();
+  let expandidos = 0;
+
+  while (frontera.length > 0) {
+    // 1. Busquen en la frontera el de menor f y sáquenlo (splice)
+
+    // 2. Si ya estaba en cerrados, continue. Si no, agréguenlo y sumen 1 a expandidos
+
+    // 3. Si es la meta: reconstruyan el camino con padre y devuelvan { camino, km, expandidos }
+
+    // 4. Para cada vecino de vecinosDe(n): g nuevo = g + km.
+    //    Si es menor que mejorG[vecino] (o no hay), actualicen mejorG y padre
+    //    y metan { n: vecino, g, f: g + lineaRecta(vecino, meta) } en la frontera
+
+    break;   // ← bórrenlo cuando hayan escrito el paso 1; si no, el while no termina nunca
+  }
+  return null;   // no hay camino
+}
+
+console.log(aEstrella("T", "U"));   // debe dar camino T, J, U · 76 km
+`,
+2: `// Parte 2 · La tabla de distancias, con su aEstrella.
+// (Su aEstrella de la parte 1 se carga sola antes de este código.)
+function tablaDistancias() {
+  const D = {};
+  for (const a in PUEBLOS) {
+    D[a] = {};
+    for (const b in PUEBLOS) {
+      // D[a][b] = los km del camino que da aEstrella(a, b)
+
+    }
+  }
+  return D;
+}
+
+console.log(tablaDistancias().H.C);   // debe dar 63 (Huancané y Coata, pasando por Taraco)
+`,
+3: `// Parte 3 · Ascenso de colina para el camión.
+// (tablaDistancias de la parte 2 ya está cargada: usen D.)
+const D = tablaDistancias();
+
+function kmRuta(orden) {          // orden: arreglo de 6 letras, sin J
+  const r = [BASE, ...orden, BASE];
+  let total = 0;
+  // sumen D[r[i]][r[i + 1]] para cada tramo
+  return total;
+}
+
+function vecinas(orden) {         // las 15 que salen de intercambiar dos posiciones
+  const lista = [];
+  for (let i = 0; i < orden.length; i++)
+    for (let j = i + 1; j < orden.length; j++) {
+      // copien orden, intercambien las posiciones i y j, y agréguenla a lista
+    }
+  return lista;
+}
+
+function colina(orden) {
+  let actual = orden, pasos = 0;
+  while (true) {
+    // busquen la mejor de vecinas(actual); si no baja de kmRuta(actual), deténganse
+    break;
+  }
+  return { ruta: actual, km: kmRuta(actual), pasos };
+}
+
+console.log(colina("HATULC".split("")));   // debe dar 372 km
+`,
+4: `// Parte 4 · Recocido simulado. (D, kmRuta y vecinas de la parte 3 ya están cargados.)
+function recocido(orden, T0, enfria, iteraciones, azar) {
+  let actual = orden, mejor = orden, T = T0;
+  for (let k = 0; k < iteraciones; k++) {
+    // 1. Dos posiciones distintas al azar: Math.floor(azar() * 6)
+    // 2. La vecina: copia de actual con esas dos posiciones intercambiadas
+    // 3. delta = kmRuta(vecina) - kmRuta(actual)
+    // 4. Si delta <= 0, se acepta. Si no, se acepta si azar() < Math.exp(-delta / T)
+    // 5. Si actual es mejor que mejor, guárdenla
+    T = T * enfria;
+  }
+  return { ruta: mejor, km: kmRuta(mejor) };
+}
+
+console.log(recocido("CHTALU".split(""), 80, 0.99, 300, crearAzar(1)));
+`,
+};
+
+// ---------- las pruebas de cada parte ---------- //
+const PRUEBAS = {
+1: String.raw`
+const casos = [["T","U",76,"T,J,U"],["A","U",117,"A,J,U"],["H","L",96,"H,T,J,L"],["U","H",104,"U,J,T,H"],["L","C",56,"L,J,C"],["J","J",0,"J"]];
+for (const [a, b, km, cam] of casos) {
+  const r = aEstrella(a, b);
+  const ok = r && Math.round(r.km) === km && Array.isArray(r.camino) && r.camino.join(",") === cam;
+  prueba(ok, PUEBLOS[a] + " → " + PUEBLOS[b], "esperaba " + km + " km por " + cam + (r ? " · dio " + Math.round(r.km) + " km por " + (r.camino || []).join(",") : " · dio null"));
+}
+const r = aEstrella("T", "U");
+prueba(r && r.expandidos <= 4, "Taraco → Puno expande 4 o menos (como en clase)", r ? "expandió " + r.expandidos : "");
+`,
+2: String.raw`
+const D = tablaDistancias();
+const F = {}; for (const a in PUEBLOS) { F[a] = {}; for (const b in PUEBLOS) F[a][b] = a === b ? 0 : Infinity; }
+for (const [a, b, w] of CARRETERAS) F[a][b] = F[b][a] = w;
+for (const k in PUEBLOS) for (const i in PUEBLOS) for (const j in PUEBLOS) if (F[i][k] + F[k][j] < F[i][j]) F[i][j] = F[i][k] + F[k][j];
+let malos = [];
+for (const a in PUEBLOS) for (const b in PUEBLOS) if (!D[a] || Math.round(D[a][b]) !== F[a][b]) malos.push(a + b + ": " + (D[a] ? D[a][b] : "—") + " en vez de " + F[a][b]);
+prueba(malos.length === 0, "Las 49 casillas de la tabla", malos.slice(0, 4).join(" · "));
+prueba(D.H && Math.round(D.H.C) === 63, "Huancané → Coata = 63, aunque no hay carretera directa", "");
+`,
+3: String.raw`
+prueba(kmRuta("HATULC".split("")) === 442, "kmRuta de la ruta de partida = 442", "dio " + kmRuta("HATULC".split("")));
+prueba(kmRuta("LAHTCU".split("")) === 353, "kmRuta de la mejor ruta = 353", "dio " + kmRuta("LAHTCU".split("")));
+const v = vecinas("CHTALU".split(""));
+prueba(v.length === 15, "15 vecinas", "dio " + v.length);
+prueba(v.length && v[0].join("") === "HCTALU", "La primera vecina cambia las posiciones 0 y 1", v.length ? "dio " + v[0].join("") : "");
+const a = colina("HATULC".split(""));
+prueba(a.km === 372, "Desde HATULC se atasca en 372", "dio " + a.km + " en " + a.pasos + " pasos");
+prueba(a.pasos === 3, "… en 3 pasos", "dio " + a.pasos);
+const b = colina("ACHTLU".split(""));
+prueba(b.km === 353, "Desde ACHTLU llega a 353", "dio " + b.km);
+`,
+4: String.raw`
+const ini = "CHTALU".split("");
+const r = recocido(ini, 80, 0.99, 300, crearAzar(1));
+prueba(r && Array.isArray(r.ruta) && r.ruta.slice().sort().join("") === "ACHLTU", "Devuelve una ruta con los seis pueblos", r ? String(r.ruta) : "");
+prueba(r && r.km <= 372, "Nunca devuelve algo peor que la ruta de partida", r ? "dio " + r.km : "");
+prueba(r && r.km === kmRuta(r.ruta), "km es el de su ruta", "");
+const frio = recocido(ini, 0.0001, 0.5, 300, crearAzar(2));
+prueba(frio.km === 372, "Con T casi cero no sale de 372 (se porta como la colina)", "dio " + frio.km);
+`,
+};
+const EXPERIMENTO = String.raw`
+const ini = "CHTALU".split(""), conf = [[30, 0.95, 120], [80, 0.99, 300], [200, 0.995, 1000]];
+const filas = conf.map(([T0, f, it]) => { let n = 0; for (let s = 1; s <= 200; s++) if (recocido(ini, T0, f, it, crearAzar(s)).km === 353) n++; return [T0, f, it, n]; });
+enviar({ tipo: "tabla", filas });
+`;
+
+// ---------- correr el código en un Worker, con tiempo límite ---------- //
+const $ = id => document.getElementById(id);
+const clave = n => "lab4-codigo-" + n;
+function leer(n) { try { return localStorage.getItem(clave(n)); } catch (e) { return null; } }
+function guardar(n, txt) { try { localStorage.setItem(clave(n), txt); } catch (e) {} }
+for (const n of [1, 2, 3, 4]) {
+  $("c" + n).value = leer(n) ?? INICIAL[n];
+  $("c" + n).addEventListener("input", () => guardar(n, $("c" + n).value));
+  $("c" + n).addEventListener("keydown", ev => { if (ev.key === "Tab") { ev.preventDefault(); const t = ev.target, p = t.selectionStart; t.setRangeText("  ", p, t.selectionEnd, "end"); guardar(n, t.value); } });
+}
+// cada parte carga antes el código de las partes anteriores, sin sus console.log
+const sinLogs = txt => txt.replace(/^\s*console\.log\(.*\);?\s*(\/\/.*)?$/gm, "");
+function codigoHasta(n) { let c = ""; for (let k = 1; k < n; k++) c += sinLogs($("c" + k).value) + "\n"; return c; }
+
+function correr(n, extra) {
+  const salida = $("s" + n);
+  salida.innerHTML = '<span class="log">corriendo…</span>';
+  const cuerpo = PRELUDIO + "\n" + codigoHasta(n) + "\n" + $("c" + n).value + "\n;{\n" + extra + "\n}";
+  const fuente = `
+    const enviar = m => postMessage(m);
+    console.log = (...a) => enviar({ tipo: "log", txt: a.map(x => typeof x === "string" ? x : JSON.stringify(x)).join(" ") });
+    const prueba = (ok, nombre, detalle) => enviar({ tipo: "prueba", ok: !!ok, nombre, detalle });
+    try { ${cuerpo}
+      enviar({ tipo: "fin" });
+    } catch (e) { enviar({ tipo: "error", txt: String(e && e.message || e) }); }`;
+  const url = URL.createObjectURL(new Blob([fuente], { type: "text/javascript" }));
+  const w = new Worker(url);
+  const lineas = [];
+  let bien = 0, total = 0;
+  const pintar = () => { salida.innerHTML = lineas.join("\n") || '<span class="log">(sin salida)</span>'; };
+  const reloj = setTimeout(() => { w.terminate(); lineas.push('<span class="mal">Se colgó: más de 8 segundos. ¿Un while que nunca termina?</span>'); pintar(); }, 8000);
+  const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  w.onerror = ev => { ev.preventDefault(); clearTimeout(reloj); w.terminate();
+    lineas.push('<span class="mal">Error al leer el código: ' + esc(ev.message || "revisen llaves y paréntesis") + "</span>"); pintar(); };
+  w.onmessage = ({ data: m }) => {
+    if (m.tipo === "log") lineas.push('<span class="log">' + esc(m.txt) + "</span>");
+    else if (m.tipo === "prueba") { total++; if (m.ok) bien++; lineas.push((m.ok ? '<span class="ok">✓ ' : '<span class="mal">✗ ') + esc(m.nombre) + "</span>" + (m.ok || !m.detalle ? "" : " · " + esc(m.detalle))); }
+    else if (m.tipo === "tabla") {
+      lineas.push('<table class="res"><tr><th>T0</th><th>enfría</th><th>iteraciones</th><th>llegan a 353 (de 200)</th></tr>' +
+        m.filas.map(f => "<tr><td>" + f.join("</td><td>") + "</td></tr>").join("") + "</table>");
+    }
+    else if (m.tipo === "error") { lineas.push('<span class="mal">Error: ' + esc(m.txt) + "</span>"); clearTimeout(reloj); w.terminate(); }
+    else if (m.tipo === "fin") { clearTimeout(reloj); w.terminate(); if (total) lineas.push((bien === total ? '<span class="ok">' : '<span class="mal">') + bien + " de " + total + " pruebas</span>"); }
+    pintar();
+  };
+}
+document.querySelectorAll("[data-probar]").forEach(b => b.onclick = () => correr(+b.dataset.probar, PRUEBAS[b.dataset.probar]));
+document.querySelectorAll("[data-experimento]").forEach(b => b.onclick = () => correr(4, EXPERIMENTO));
+document.querySelectorAll("[data-restaurar]").forEach(b => b.onclick = () => { const n = b.dataset.restaurar; $("c" + n).value = INICIAL[n]; guardar(n, INICIAL[n]); $("s" + n).textContent = ""; });
+$("borrar").onclick = () => { for (const n of [1, 2, 3, 4]) { try { localStorage.removeItem(clave(n)); } catch (e) {} $("c" + n).value = INICIAL[n]; $("s" + n).textContent = ""; } };
+
+// ---------- el mapa ---------- //
+const P = { A:["Azángaro",100,55], H:["Huancané",565,85], T:["Taraco",430,150], J:["Juliaca",200,250], C:["Coata",440,290], L:["Lampa",55,400], U:["Puno",400,432] };
+const E = [["T","H",28,-22,-14],["T","J",33],["T","C",35,16,10],["T","A",61],["J","C",21],["J","U",43],["J","L",35],["J","A",74],["C","U",45,-50,10],["A","L",78]];
+const ns = "http://www.w3.org/2000/svg", el = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+for (const [a, b, w, dx = 0, dy = 0] of E) { const [, x1, y1] = P[a], [, x2, y2] = P[b];
+  $("aristas").append(el("line", { x1, y1, x2, y2, class: "arista" }), el("text", { x: (x1 + x2) / 2 + 7 + dx, y: (y1 + y2) / 2 - 7 + dy, class: "peso" }, w + " km")); }
+for (const [k, [n, x, y]] of Object.entries(P)) { const g = el("g", { class: "nodo" });
+  g.append(el("circle", { cx: x, cy: y, r: 39 }), el("text", { x, y: y - 2, "text-anchor": "middle" }, n), el("text", { x, y: y + 15, "text-anchor": "middle" }, k)); $("nodos").append(g); }
+</script>
+</body>
+</html>

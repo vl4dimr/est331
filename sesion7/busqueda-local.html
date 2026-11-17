@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Búsqueda local: la ruta del camión · se explica sola</title>
+<style>
+  :root { --crema:#fbf7ef; --tinta:#1f2a22; --salvia:#42654e; --terracota:#a64c28; --gris:#6b6e66; --linea:#ded6c4; --oro:#d9a441; --lago:#dbe9ee; --cielo:#eef3f4; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--crema); color:var(--tinta); font:22px/1.4 Georgia, "Times New Roman", serif; overflow:hidden; }
+  main { display:grid; grid-template-rows:auto 1fr auto; height:100vh; padding:14px 22px 10px; gap:10px; }
+  header { display:flex; align-items:baseline; justify-content:space-between; gap:16px; }
+  header h1 { font-size:26px; margin:0; color:var(--salvia); } header small { color:var(--gris); font-size:15px; text-align:right; }
+  .escenario { display:grid; grid-template-columns:1.25fr 1fr; gap:22px; min-height:0; }
+  svg { width:100%; height:100%; background:#fff; border:1px solid var(--linea); border-radius:16px; }
+  .panel { display:flex; flex-direction:column; gap:12px; min-height:0; }
+  .titulo { font-size:30px; color:var(--terracota); font-weight:bold; line-height:1.15; min-height:1.2em; }
+  .texto { font-size:24px; line-height:1.42; }
+  .texto b { color:var(--salvia); }
+  .fade { animation: fade 450ms ease both; }
+  @keyframes fade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  .caja { background:#fff; border:1px solid var(--linea); border-radius:12px; padding:8px 12px; font-size:19px; }
+  .caja h3 { margin:0 0 6px; font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--gris); font-family:system-ui, sans-serif; display:flex; justify-content:space-between; }
+  .caja h3 span.km { color:var(--terracota); font-size:20px; letter-spacing:0; }
+  .orden { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:18px; }
+  .orden li { padding:2px 9px; border-radius:999px; border:2px solid var(--linea); background:#fff; }
+  .orden li.base { border-color:var(--salvia); background:#e7eee8; font-weight:bold; }
+  .orden li.cambio { border-color:var(--oro); background:#fbf1dc; font-weight:bold; animation: pop 400ms cubic-bezier(.34,1.56,.64,1) both; }
+  .orden li.flecha { border:0; padding:0 1px; color:var(--gris); }
+  @keyframes pop { from { transform:scale(.6); opacity:0; } to { transform:none; opacity:1; } }
+  .calc { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; font-family:system-ui, sans-serif; }
+  .calc div { background:var(--crema); border-radius:8px; padding:4px 8px; text-align:center; }
+  .calc small { display:block; font-size:13px; color:var(--gris); } .calc b { font-size:22px; }
+  .veredicto { margin-top:6px; font-weight:bold; font-family:system-ui, sans-serif; font-size:18px; }
+  .resumen { background:#fff; border-left:6px solid var(--terracota); border-radius:8px; padding:8px 14px; font-size:21px; }
+  .resumen table { border-collapse:collapse; width:100%; font-size:19px; }
+  .resumen td, .resumen th { border-bottom:1px solid var(--linea); padding:4px 8px; text-align:left; } .resumen th { color:var(--salvia); }
+  .resumen table.dist { font-size:16px; } .resumen table.dist td, .resumen table.dist th { padding:2px 5px; text-align:right; }
+  .resumen td.n { text-align:right; font-variant-numeric:tabular-nums; }
+  .ok { color:var(--salvia); font-weight:bold; } .mal { color:var(--terracota); font-weight:bold; }
+  footer { display:flex; align-items:center; gap:10px; }
+  button { font:inherit; font-size:20px; padding:6px 16px; border:2px solid var(--salvia); background:#fff; color:var(--salvia); border-radius:10px; cursor:pointer; }
+  button:disabled { opacity:.4; cursor:default; }
+  button.principal { background:var(--salvia); color:#fff; min-width:170px; }
+  .barra { flex:1; height:12px; background:#e6e0d2; border-radius:6px; overflow:hidden; position:relative; }
+  .barra .hecho { position:absolute; inset:0; width:0; background:var(--salvia); border-radius:6px; }
+  .barra .ahora { position:absolute; top:0; bottom:0; width:0; background:var(--oro); opacity:.8; }
+  .contador { font-family:system-ui, sans-serif; font-size:16px; color:var(--gris); min-width:64px; text-align:right; }
+  /* el mapa */
+  .lago { fill:var(--lago); } .lago-nombre { font-size:15px; font-style:italic; fill:#6f8f9a; font-family:system-ui, sans-serif; }
+  .arista { stroke:#d6dcd4; stroke-width:3; }
+  .tramo { fill:none; stroke:var(--terracota); stroke-width:7; stroke-linecap:round; stroke-linejoin:round; opacity:.85; }
+  .tramo.mejor { stroke:var(--salvia); }
+  .tramo.cambio { stroke:var(--oro); stroke-width:9; }
+  .nodo circle { fill:#fbf7ef; stroke:var(--salvia); stroke-width:3; }
+  .nodo text.nombre { font-size:15px; font-weight:bold; fill:var(--tinta); }
+  .nodo.base circle { fill:var(--salvia); } .nodo.base text.nombre { fill:#fff; }
+  .nodo.cambio circle { stroke:var(--oro); stroke-width:7; animation: pulso 1s ease-in-out infinite alternate; }
+  @keyframes pulso { from { stroke-opacity:.35; } to { stroke-opacity:1; } }
+  .num { font-size:14px; font-weight:bold; font-family:system-ui, sans-serif; fill:#fff; }
+  .numfondo { fill:var(--terracota); } .numfondo.mejor { fill:var(--salvia); }
+  .peso { font-size:14px; fill:var(--gris); font-family:system-ui, sans-serif; }
+  .sello text { font-size:26px; font-weight:bold; font-family:system-ui, sans-serif; } .sello rect { rx:12; stroke-width:3; fill:#fff; }
+  .sello.ok rect { stroke:var(--salvia); } .sello.ok text { fill:var(--salvia); } .sello.mal rect { stroke:var(--terracota); } .sello.mal text { fill:var(--terracota); }
+  .sello.oro rect { stroke:var(--oro); } .sello.oro text { fill:#8a6414; }
+  .badge { animation: pop 400ms cubic-bezier(.34,1.56,.64,1) both; }
+  /* el paisaje (un dibujo para la idea) */
+  #paisaje { display:none; } svg.verPaisaje #paisaje { display:inline; } svg.verPaisaje #mapa { display:none; }
+  .cielo { fill:var(--cielo); } .cerro { fill:#c9d7c6; stroke:var(--salvia); stroke-width:3; }
+  .niebla { fill:#fff; opacity:.72; } .rotulo { font-size:16px; font-family:system-ui, sans-serif; fill:var(--tinta); }
+  .rotulo.r { fill:var(--terracota); font-weight:bold; } .rotulo.v { fill:var(--salvia); font-weight:bold; } .rotulo.g { fill:var(--gris); font-style:italic; }
+  @media (max-width:980px) { .escenario { grid-template-columns:1fr; } .texto { font-size:20px; } .titulo { font-size:24px; } body { overflow:auto; } main { height:auto; } }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Búsqueda local: la ruta del camión</h1><small>EST331 · Inteligencia Artificial · ascenso de colina y recocido simulado<br>kilómetros reales por carretera (OpenStreetMap, nov. 2026), los mismos de la clase de A*</small></header>
+  <section class="escenario">
+    <svg id="lienzo" viewBox="0 0 640 470" aria-label="Mapa de carreteras y ruta del camión">
+      <g id="mapa">
+        <path class="lago" d="M 468 215 C 515 250, 470 360, 445 470 L 640 470 L 640 160 C 600 175, 525 185, 468 215 Z"/>
+        <text class="lago-nombre" x="560" y="330" text-anchor="middle">Lago Titicaca</text>
+        <g id="aristas"></g><g id="pesos"></g><g id="tramos"></g><g id="nodos"></g><g id="numeros"></g>
+      </g>
+      <g id="paisaje">
+        <rect class="cielo" x="0" y="0" width="640" height="470" rx="16"/>
+        <path class="cerro" d="M 0 470 L 0 360 C 40 340, 70 250, 120 245 C 170 240, 190 330, 230 320 C 270 310, 300 120, 360 110 C 420 100, 440 260, 480 270 C 510 278, 530 230, 560 235 C 600 240, 620 330, 640 340 L 640 470 Z"/>
+        <rect class="niebla" x="200" y="30" width="440" height="320"/>
+        <circle cx="120" cy="245" r="11" fill="var(--terracota)"/>
+        <text class="rotulo r" x="20" y="215">aquí se quedó la colina</text>
+        <text class="rotulo r" x="120" y="282" text-anchor="middle">372 km</text>
+        <text class="rotulo v" x="360" y="92" text-anchor="middle">la mejor: 353 km</text>
+        <text class="rotulo" x="560" y="214" text-anchor="middle">otro cerrito</text>
+        <text class="rotulo g" x="420" y="150" text-anchor="middle">niebla: desde su cerro, la colina</text>
+        <text class="rotulo g" x="420" y="172" text-anchor="middle">solo ve a sus 15 vecinas</text>
+        <text class="rotulo g" x="320" y="455" text-anchor="middle">un dibujo para la idea: «más alto» es «menos kilómetros»</text>
+      </g>
+      <g id="sellos"></g>
+    </svg>
+    <div class="panel">
+      <div class="titulo" id="titulo"></div>
+      <div class="texto" id="texto"></div>
+      <div class="caja" id="cajaRuta" hidden><h3><span id="rotRuta">La ruta</span><span class="km" id="kmRuta"></span></h3><ul class="orden" id="orden"></ul></div>
+      <div class="caja" id="cajaCalc" hidden><h3><span>Recocido · un paso</span><span id="itCalc"></span></h3>
+        <div class="calc"><div><small>temperatura T</small><b id="cT"></b></div><div><small>cambio Δ (km)</small><b id="cD"></b></div>
+        <div><small>p = e<sup>−Δ/T</sup></small><b id="cP"></b></div><div><small>sorteo</small><b id="cU"></b></div></div>
+        <div class="veredicto" id="cV"></div></div>
+      <div class="resumen" id="resumen" hidden></div>
+    </div>
+  </section>
+  <footer>
+    <button id="ini" title="Al inicio">⏮</button>
+    <button id="ant" title="Anterior (←)">◀</button>
+    <button id="play" class="principal">▶ Reproducir</button>
+    <button id="sig" title="Siguiente (→)">▶</button>
+    <div class="barra"><div class="hecho" id="hecho"></div><div class="ahora" id="ahora"></div></div>
+    <div class="contador" id="contador"></div>
+    <button id="pant" title="Pantalla completa (F)">⛶</button>
+  </footer>
+</main>
+<script>
+// --- el mapa de la clase de A*: kilómetros por carretera (OSRM sobre OpenStreetMap) --- //
+const P = { A:["Azángaro",100,55], H:["Huancané",565,85], T:["Taraco",430,150], J:["Juliaca",200,250], C:["Coata",440,290], L:["Lampa",55,400], U:["Puno",400,432] };
+const E = [["T","H",28,-22,-14],["T","J",33],["T","C",35,16,10],["T","A",61],["J","C",21],["J","U",43],["J","L",35],["J","A",74],["C","U",45,-50,10],["A","L",78]];
+const N = Object.keys(P), BASE = "J";
+// el camino más corto entre cada par (lo que calcularía A*), para los pueblos sin carretera directa
+const D = {}, SIG = {};
+for (const a of N) { D[a] = {}; SIG[a] = {}; for (const b of N) { D[a][b] = a === b ? 0 : Infinity; SIG[a][b] = b; } }
+for (const [a, b, w] of E) { D[a][b] = D[b][a] = w; }
+for (const k of N) for (const i of N) for (const j of N) if (D[i][k] + D[k][j] < D[i][j]) { D[i][j] = D[i][k] + D[k][j]; SIG[i][j] = SIG[i][k]; }
+const camino = (a, b) => { const c = [a]; while (a !== b) { a = SIG[a][b]; c.push(a); } return c; };
+const km = orden => { const r = [BASE, ...orden, BASE]; let s = 0; for (let i = 0; i + 1 < r.length; i++) s += D[r[i]][r[i + 1]]; return s; };
+const ord = s => s.split("");
+
+const ns = "http://www.w3.org/2000/svg", el = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+const $ = id => document.getElementById(id);
+for (const [a, b, w, dx = 0, dy = 0] of E) {
+  const [, x1, y1] = P[a], [, x2, y2] = P[b];
+  $("aristas").append(el("line", { x1, y1, x2, y2, class: "arista" }));
+  $("pesos").append(el("text", { x: (x1 + x2) / 2 + 7 + dx, y: (y1 + y2) / 2 - 7 + dy, class: "peso" }, w + " km"));
+}
+const nodos = {};
+for (const [k, [n, x, y]] of Object.entries(P)) {
+  const g = el("g", { class: "nodo" + (k === BASE ? " base" : "") });
+  g.append(el("circle", { cx: x, cy: y, r: 39 }), el("text", { x, y: y + 6, "text-anchor": "middle", class: "nombre" }, n));
+  nodos[k] = g; $("nodos").append(g);
+}
+const nombre = k => P[k][0];
+
+// --- las escenas ------------------------------------------------------------------------ //
+// m: r ruta (orden de los 6 pueblos) · mejor pinta en verde · cam [i,j] posiciones cambiadas · sello [texto, ok|mal|oro]
+//    paisaje muestra el dibujo · rec [it, T, Δ, p, sorteo, acepta] · rot rótulo de la caja
+const S = [
+  { t: "Ya no buscamos un camino: buscamos un orden", n: "El camión de la leche sale de <b>Juliaca</b>, pasa una vez por cada uno de los otros seis pueblos y vuelve a Juliaca. ¿En qué orden le conviene ir? Los kilómetros son los mismos de la clase de A*. Si dos pueblos no tienen carretera directa, va por el camino más corto: <b>justo lo que calcula A*</b>.", m: {} },
+  { t: "¿Cuántos órdenes hay?", n: "Seis pueblos se pueden ordenar de 6 × 5 × 4 × 3 × 2 × 1 = <b>720</b> maneras. Aquí todavía se pueden probar todas. Con 20 pueblos serían 2,4 trillones: ni la computadora más grande las termina. Hace falta otra idea.", m: {} },
+  { t: "La idea de la búsqueda local", n: "No hay árbol ni frontera. Tenemos <b>una sola ruta</b> y miramos sus <b>vecinas</b>: las que salen de intercambiar dos pueblos de lugar. Con seis pueblos hay <b>15 vecinas</b>. Nos movemos a una vecina, y otra vez.", m: {} },
+  { t: "La ruta de partida", n: "Empezamos con el orden en que llegaron los pedidos: Huancané, Azángaro, Taraco, Puno, Lampa, Coata. <b>442 km</b>. Fíjense en el zigzag: cruza el mapa de un lado a otro.", m: { r: "HATULC", rot: "La ruta de partida" } },
+  { t: "1 · Ascenso de colina", n: "La regla: mirar las 15 vecinas y <b>quedarse con la mejor, si mejora</b>. La mejor vecina cambia Huancané por Azángaro: <b>422 km</b>. Bajamos 20.", m: { r: "AHTULC", cam: [0, 1], rot: "Paso 1 · cambia el 1.º con el 2.º" } },
+  { t: "1 · Ascenso de colina", n: "Otra vez las 15 vecinas. Lo mejor es cambiar Azángaro por Puno: <b>391 km</b>.", m: { r: "UHTALC", cam: [0, 3], rot: "Paso 2 · cambia el 1.º con el 4.º" } },
+  { t: "1 · Ascenso de colina", n: "Ahora Puno por Coata: <b>372 km</b>. Ya no hay zigzag.", m: { r: "CHTALU", cam: [0, 5], rot: "Paso 3 · cambia el 1.º con el 6.º" } },
+  { t: "1 · Se atascó", n: "Miramos las 15 vecinas: <b>ninguna baja de 372</b>. Una empata (cambiar Huancané con Taraco, 372 otra vez) y las otras 14 suben. La colina se detiene: para ella, esta es la cima. ¿Es la mejor ruta?", m: { r: "CHTALU", rot: "Ninguna vecina mejora", sello: ["372 km · ¿la mejor?", "oro"] } },
+  { t: "No: hay una de 353", n: "Como son solo 720, las probamos todas. La mejor: Juliaca, <b>Lampa, Azángaro, Huancané, Taraco, Coata, Puno</b> y Juliaca. <b>353 km</b>, 19 menos. La colina se quedó en un <b>óptimo local</b>.", m: { r: "LAHTCU", mejor: true, rot: "La mejor de las 720", sello: ["353 km ✓ la mejor", "ok"] } },
+  { t: "¿Por qué se atascó?", n: "Piensen en subir un cerro con <b>niebla</b>: solo ven el paso que tienen al lado. Si todo alrededor baja, creen que llegaron a la cima, aunque detrás de la niebla haya un cerro más alto. Eso es un <b>óptimo local</b>. La colina nunca acepta dar un paso hacia abajo.", m: { paisaje: true } },
+  { t: "Salida 1 · volver a empezar", n: "La primera salida es la más simple: <b>empezar de nuevo</b> desde otra ruta al azar. Desde Azángaro, Coata, Huancané, Taraco, Lampa, Puno (449 km), la colina baja a 399 y después a <b>353</b>. Esta vez sí llegó.", m: { r: "UCHTAL", mejor: true, rot: "Otra partida: 449 → 399 → 353", sello: ["353 km ✓ con otra partida", "ok"] } },
+  { t: "¿Cuántas veces hay que empezar?", n: "De las 720 rutas de partida, la colina llega a 353 desde <b>226</b>: casi una de cada tres. Si la corremos cinco veces y nos quedamos con la mejor, acierta <b>84 de cada 100</b> veces; con diez, 98.", m: {},
+    r: `<table><tr><th>Ascenso de colina</th><th>llega a 353</th></tr>
+        <tr><td>Una vez</td><td class="n">31 de 100</td></tr><tr><td>Cinco veces</td><td class="n">84 de 100</td></tr><tr><td>Diez veces</td><td class="n">98 de 100</td></tr></table>` },
+  { t: "Salida 2 · recocido simulado", n: "La otra salida: <b>aceptar a veces una ruta peor</b>. Viene del herrero que enfría el metal despacio. Al principio está caliente y acepta casi cualquier cambio; al enfriarse, cada vez menos. Si la vecina es peor por Δ km, se acepta con probabilidad <b>p = e<sup>−Δ/T</sup></b>, donde T es la temperatura.", m: { r: "CHTALU", rot: "Partimos de donde se atascó la colina: 372" } },
+  { t: "En parejas · 12 minutos", n: "<b>A.</b> Desde la ruta de 372 (Coata, Huancané, Taraco, Azángaro, Lampa, Puno), calculen tres vecinas: cambiar el 2.º con el 3.º, el 4.º con el 5.º y el 5.º con el 6.º. ¿Alguna baja de 372?<br><b>B.</b> Con calculadora, p = e<sup>−Δ/T</sup>, y se acepta si el sorteo es menor que p:<br>① Δ 70, T 30, sorteo 0,85 · ② Δ 46, T 28,5, sorteo 0,12<br>③ Δ 19, T 24,4, sorteo 0,61 · ④ Δ 19, T 5, sorteo 0,30", m: {}, s: 720,
+    r: `<table class="dist"><tr><th></th><th>Juli</th><th>Azán</th><th>Tara</th><th>Huan</th><th>Coat</th><th>Lamp</th><th>Puno</th></tr><tr><th>Juli</th><td class="n">·</td><td class="n">74</td><td class="n">33</td><td class="n">61</td><td class="n">21</td><td class="n">35</td><td class="n">43</td></tr><tr><th>Azán</th><td class="n">74</td><td class="n">·</td><td class="n">61</td><td class="n">89</td><td class="n">95</td><td class="n">78</td><td class="n">117</td></tr><tr><th>Tara</th><td class="n">33</td><td class="n">61</td><td class="n">·</td><td class="n">28</td><td class="n">35</td><td class="n">68</td><td class="n">76</td></tr><tr><th>Huan</th><td class="n">61</td><td class="n">89</td><td class="n">28</td><td class="n">·</td><td class="n">63</td><td class="n">96</td><td class="n">104</td></tr><tr><th>Coat</th><td class="n">21</td><td class="n">95</td><td class="n">35</td><td class="n">63</td><td class="n">·</td><td class="n">56</td><td class="n">45</td></tr><tr><th>Lamp</th><td class="n">35</td><td class="n">78</td><td class="n">68</td><td class="n">96</td><td class="n">56</td><td class="n">·</td><td class="n">78</td></tr><tr><th>Puno</th><td class="n">43</td><td class="n">117</td><td class="n">76</td><td class="n">104</td><td class="n">45</td><td class="n">78</td><td class="n">·</td></tr></table>` },
+  { t: "2 · Un cambio peor, rechazado", n: "T = 30. Una vecina al azar: cambiar Huancané por Lampa da 442 km, <b>70 peor</b>. p = e<sup>−70/30</sup> = 0,10. Sorteamos un número entre 0 y 1: sale 0,85, más que 0,10. <b>No se acepta.</b>", m: { r: "CLTAHU", cam: [1, 4], rot: "Propuesta · 442 km", rec: [1, "30", "+70", "0,10", "0,85", false] } },
+  { t: "2 · Un cambio peor, aceptado", n: "T = 28,5. Cambiar Coata por Taraco da 418, <b>46 peor</b>. p = 0,20. El sorteo da 0,12: menos que 0,20. <b>Se acepta.</b> Bajó del cerro a propósito: la colina nunca habría hecho esto.", m: { r: "THCALU", cam: [0, 2], rot: "Ahora · 418 km", rec: [2, "28,5", "+46", "0,20", "0,12", true] } },
+  { t: "2 · Y desde ahí, mejora", n: "Desde la nueva ruta, una vecina mejora: Azángaro y Puno se intercambian, <b>399 km</b>. Un cambio que mejora se acepta siempre.", m: { r: "THCULA", cam: [3, 5], rot: "Ahora · 399 km", rec: [3, "27,1", "−19", "1", "—", true] } },
+  { t: "2 · Pasea, y se enfría", n: "Durante unos pasos más acepta otro empeoramiento chico y rechaza los grandes. En el paso 10 vuelve a <b>372 km</b>, pero con otra ruta: Coata, Puno, Huancané, Taraco, Azángaro, Lampa. En el paso 14 cambia Huancané con Taraco y sigue en 372. Ya no está en el mismo cerro.", m: { r: "CUHTAL", rot: "Paso 10 · 372 km, otro cerro", rec: [10, "18,9", "−46", "1", "—", true] } },
+  { t: "2 · Llegó", n: "Paso 16, T = 13,9. Cambiar Coata por Puno: <b>353 km</b>. La mejor ruta, la misma de antes pero recorrida al revés. La colina sola no salía de 372.", m: { r: "UCTHAL", mejor: true, cam: [0, 1], rot: "Paso 16 · 353 km", rec: [16, "13,9", "−19", "1", "—", true], sello: ["353 km ✓ con recocido", "ok"] } },
+  { t: "¿Siempre llega?", n: "No. Corrimos el recocido mil veces desde 372. <b>Enfriando rápido</b> (T de 30, por 0,95 en cada paso) llega solo 28 de cada 100: casi no acepta nada y se porta como una colina. <b>Enfriando despacio</b> (T de 80, por 0,99) llega 85. Con problemas chicos, reiniciar la colina funciona igual de bien; con problemas enormes, el recocido aprovecha mejor cada paso.", m: {},
+    r: `<table><tr><th>Método · mil corridas</th><th>llega a 353</th></tr>
+        <tr><td>Colina, una vez</td><td class="n">31 de 100</td></tr><tr><td>Colina, cinco veces</td><td class="n">84 de 100</td></tr>
+        <tr><td>Recocido, enfriando rápido</td><td class="n mal">28 de 100</td></tr><tr><td>Recocido, enfriando despacio</td><td class="n ok">85 de 100</td></tr></table>` },
+  { t: "Ticket de salida · media hoja", n: "<b>1.</b> ¿Por qué el ascenso de colina se quedó en 372 si existía una ruta de 353?<br><b>2.</b> El recocido aceptó una ruta 46 km peor. ¿Por qué eso puede ser bueno, y por qué la probabilidad baja cuando T baja?", m: { r: "LAHTCU", mejor: true, rot: "La mejor · 353 km" }, s: 120 },
+];
+
+// --- dibujar una escena ----------------------------------------------------------------- //
+let i = 0, reproduciendo = false, reloj = null;
+function dibujarRuta(m) {
+  $("tramos").replaceChildren(); $("numeros").replaceChildren();
+  for (const g of Object.values(nodos)) g.classList.remove("cambio");
+  if (!m.r) return;
+  const o = ord(m.r), r = [BASE, ...o, BASE], cambiados = (m.cam || []).map(p => o[p]);
+  for (let k = 0; k + 1 < r.length; k++) {
+    const pts = camino(r[k], r[k + 1]).map(c => P[c][1] + "," + P[c][2]).join(" ");
+    $("tramos").append(el("polyline", { points: pts, class: "tramo" + (m.mejor ? " mejor" : "") }));
+  }
+  o.forEach((c, k) => {
+    const [, x, y] = P[c], g = el("g", { class: "badge" });
+    g.append(el("circle", { cx: x + 30, cy: y - 30, r: 13, class: "numfondo" + (m.mejor ? " mejor" : "") }),
+             el("text", { x: x + 30, y: y - 25, "text-anchor": "middle", class: "num" }, String(k + 1)));
+    $("numeros").append(g);
+    if (cambiados.includes(c)) nodos[c].classList.add("cambio");
+  });
+}
+function pintar(k) {
+  const e = S[k], m = e.m;
+  $("lienzo").classList.toggle("verPaisaje", !!m.paisaje);
+  dibujarRuta(m);
+  $("sellos").replaceChildren();
+  if (m.sello) { const [txt, cl] = m.sello, w = txt.length * 13.5 + 30, g = el("g", { class: "sello badge " + cl });
+    g.append(el("rect", { x: 320 - w / 2, y: 12, width: w, height: 44 }), el("text", { x: 320, y: 43, "text-anchor": "middle" }, txt)); $("sellos").append(g); }
+  $("titulo").textContent = e.t; $("texto").innerHTML = e.n;
+  for (const id of ["titulo", "texto"]) { const x = $(id); x.classList.remove("fade"); void x.offsetWidth; x.classList.add("fade"); }
+  // la caja de la ruta
+  if (m.r) {
+    $("cajaRuta").hidden = false; $("rotRuta").textContent = m.rot || "La ruta"; $("kmRuta").textContent = km(ord(m.r)) + " km";
+    const ul = $("orden"); ul.replaceChildren(); const o = ord(m.r), cambiados = (m.cam || []).map(p => o[p]);
+    const poner = (txt, cl) => { const li = document.createElement("li"); li.textContent = txt; if (cl) li.className = cl; ul.append(li); };
+    poner(nombre(BASE), "base");
+    for (const c of o) { poner("→", "flecha"); poner(nombre(c), cambiados.includes(c) ? "cambio" : ""); }
+    poner("→", "flecha"); poner(nombre(BASE), "base");
+  } else $("cajaRuta").hidden = true;
+  // la caja del recocido
+  if (m.rec) {
+    const [it, T, d, p, u, acepta] = m.rec;
+    $("cajaCalc").hidden = false; $("itCalc").textContent = "paso " + it;
+    $("cT").textContent = T; $("cD").textContent = d; $("cP").textContent = p; $("cU").textContent = u;
+    const peor = d.startsWith("+");
+    $("cV").innerHTML = peor ? (acepta ? '<span class="ok">sorteo &lt; p · se acepta, aunque sea peor</span>' : '<span class="mal">sorteo &gt; p · no se acepta</span>')
+                             : '<span class="ok">mejora · se acepta siempre</span>';
+  } else $("cajaCalc").hidden = true;
+  $("resumen").hidden = !e.r; $("resumen").innerHTML = e.r || "";
+  $("contador").textContent = (k + 1) + " / " + S.length; $("hecho").style.width = (100 * k / (S.length - 1)) + "%";
+  $("ant").disabled = k === 0; $("sig").disabled = k === S.length - 1;
+}
+const duracion = e => e.s ?? Math.max(7, Math.round(e.n.replace(/<[^>]+>/g, "").split(/\s+/).length / 2.2) + 2);
+function ir(k) { i = Math.max(0, Math.min(S.length - 1, k)); pintar(i); if (reproduciendo) programar(); }
+function programar() {
+  clearTimeout(reloj); const seg = duracion(S[i]), ahora = $("ahora");
+  ahora.style.transition = "none"; ahora.style.left = (100 * i / (S.length - 1)) + "%"; ahora.style.width = "0"; void ahora.offsetWidth;
+  ahora.style.transition = "width " + seg + "s linear"; ahora.style.width = (100 / (S.length - 1)) + "%";
+  if (i < S.length - 1) reloj = setTimeout(() => ir(i + 1), seg * 1000); else parar();
+}
+function reproducir() { reproduciendo = true; $("play").textContent = "⏸ Pausa"; programar(); }
+function parar() { reproduciendo = false; clearTimeout(reloj); $("play").textContent = "▶ Reproducir"; $("ahora").style.transition = "none"; $("ahora").style.width = "0"; }
+$("play").onclick = () => reproduciendo ? parar() : reproducir();
+$("sig").onclick = () => ir(i + 1); $("ant").onclick = () => ir(i - 1); $("ini").onclick = () => { parar(); ir(0); };
+$("pant").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+document.addEventListener("keydown", ev => {
+  if (ev.key === "ArrowRight" || ev.key === "PageDown") ir(i + 1); else if (ev.key === "ArrowLeft" || ev.key === "PageUp") ir(i - 1);
+  else if (ev.key === " ") { ev.preventDefault(); $("play").click(); } else if (ev.key.toLowerCase() === "f") $("pant").click();
+});
+// comprobación: los kilómetros que dicen los textos son los que da el mapa
+console.assert(km(ord("HATULC")) === 442 && km(ord("AHTULC")) === 422 && km(ord("UHTALC")) === 391 && km(ord("CHTALU")) === 372 &&
+               km(ord("LAHTCU")) === 353 && km(ord("ACHTLU")) === 449 && km(ord("CLTAHU")) === 442 && km(ord("THCALU")) === 418 &&
+               km(ord("THCULA")) === 399 && km(ord("CUHTAL")) === 372 && km(ord("UCTHAL")) === 353, "kilómetros distintos a los del texto");
+pintar(0);
+</script>
+</body>
+</html>

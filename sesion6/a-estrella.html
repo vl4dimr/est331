@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A* de Taraco a Puno · se explica sola</title>
+<style>
+  :root { --crema:#fbf7ef; --tinta:#1f2a22; --salvia:#42654e; --terracota:#a64c28; --gris:#6b6e66; --linea:#ded6c4; --oro:#d9a441; --lago:#dbe9ee; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--crema); color:var(--tinta); font:22px/1.4 Georgia, "Times New Roman", serif; overflow:hidden; }
+  main { display:grid; grid-template-rows:auto 1fr auto; height:100vh; padding:14px 22px 10px; gap:10px; }
+  header { display:flex; align-items:baseline; justify-content:space-between; gap:16px; }
+  header h1 { font-size:26px; margin:0; color:var(--salvia); } header small { color:var(--gris); font-size:15px; text-align:right; }
+  .escenario { display:grid; grid-template-columns:1.25fr 1fr; gap:22px; min-height:0; }
+  svg { width:100%; height:100%; background:#fff; border:1px solid var(--linea); border-radius:16px; }
+  .panel { display:flex; flex-direction:column; gap:12px; min-height:0; }
+  .titulo { font-size:30px; color:var(--terracota); font-weight:bold; line-height:1.15; min-height:1.2em; }
+  .texto { font-size:25px; line-height:1.42; }
+  .texto b { color:var(--salvia); }
+  .fade { animation: fade 450ms ease both; }
+  @keyframes fade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  .frontera { background:#fff; border:1px solid var(--linea); border-radius:12px; padding:8px 12px; font-size:19px; }
+  .frontera h3 { margin:0 0 4px; font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--gris); font-family:system-ui, sans-serif; }
+  .frontera ul { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px; }
+  .frontera li { padding:3px 10px; border-radius:999px; border:2px solid var(--linea); background:#fff; animation: pop 400ms cubic-bezier(.34,1.56,.64,1) both; }
+  .frontera li.min { border-color:var(--salvia); background:#e7eee8; font-weight:bold; }
+  .frontera li.nuevo { border-color:var(--oro); }
+  @keyframes pop { from { transform:scale(.6); opacity:0; } to { transform:none; opacity:1; } }
+  .resumen { background:#fff; border-left:6px solid var(--terracota); border-radius:8px; padding:8px 14px; font-size:21px; }
+  .resumen table { border-collapse:collapse; width:100%; font-size:19px; }
+  .resumen td, .resumen th { border-bottom:1px solid var(--linea); padding:4px 8px; text-align:left; } .resumen th { color:var(--salvia); }
+  .ok { color:var(--salvia); font-weight:bold; } .mal { color:var(--terracota); font-weight:bold; }
+  footer { display:flex; align-items:center; gap:10px; }
+  button { font:inherit; font-size:20px; padding:6px 16px; border:2px solid var(--salvia); background:#fff; color:var(--salvia); border-radius:10px; cursor:pointer; }
+  button.principal { background:var(--salvia); color:#fff; min-width:170px; }
+  .barra { flex:1; height:12px; background:#e6e0d2; border-radius:6px; overflow:hidden; position:relative; }
+  .barra .hecho { position:absolute; inset:0; width:0; background:var(--salvia); border-radius:6px; }
+  .barra .ahora { position:absolute; top:0; bottom:0; width:0; background:var(--oro); opacity:.8; }
+  .contador { font-family:system-ui, sans-serif; font-size:16px; color:var(--gris); min-width:64px; text-align:right; }
+  /* el mapa */
+  .lago { fill:var(--lago); } .lago-nombre { font-size:15px; font-style:italic; fill:#6f8f9a; font-family:system-ui, sans-serif; }
+  .arista { stroke:#aeb9ae; stroke-width:3; transition: stroke 500ms, stroke-width 500ms; }
+  .arista.cam { stroke:var(--terracota); stroke-width:8; }
+  .arista.prob { stroke:var(--oro); stroke-width:6; }
+  .nodo circle { fill:#fbf7ef; stroke:var(--salvia); stroke-width:3; transition: fill 500ms, stroke 500ms, stroke-width 500ms; }
+  .nodo text.nombre { font-size:15px; font-weight:bold; fill:var(--tinta); transition: fill 500ms; }
+  .nodo.fr circle { stroke:var(--oro); stroke-width:6; }
+  .nodo.exp circle { fill:var(--salvia); } .nodo.exp text.nombre { fill:#fff; }
+  .nodo.meta circle { fill:var(--terracota); } .nodo.meta text.nombre { fill:#fff; }
+  .nodo.act circle { stroke:var(--terracota); stroke-width:7; animation: pulso 1s ease-in-out infinite alternate; }
+  @keyframes pulso { from { stroke-opacity:.35; } to { stroke-opacity:1; } }
+  .h { font-size:15px; fill:var(--terracota); font-family:system-ui, sans-serif; opacity:0; transition: opacity 500ms; } .h.ver { opacity:1; }
+  .h.exagera { fill:#b00020; font-weight:bold; }
+  .peso { font-size:15px; fill:var(--gris); font-family:system-ui, sans-serif; }
+  .badge { animation: pop 400ms cubic-bezier(.34,1.56,.64,1) both; }
+  .badge rect { fill:#fff; stroke:var(--oro); stroke-width:2; rx:9; } .badge.min rect { fill:#e7eee8; stroke:var(--salvia); }
+  .badge text { font-size:15px; font-weight:bold; font-family:system-ui, sans-serif; fill:var(--tinta); }
+  .costo text { font-size:26px; font-weight:bold; font-family:system-ui, sans-serif; } .costo rect { rx:12; stroke-width:3; fill:#fff; }
+  .costo.ok rect { stroke:var(--salvia); } .costo.ok text { fill:var(--salvia); } .costo.mal rect { stroke:var(--terracota); } .costo.mal text { fill:var(--terracota); }
+  @media (max-width:980px) { .escenario { grid-template-columns:1fr; } .texto { font-size:20px; } .titulo { font-size:24px; } }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>A*: de Taraco a Puno</h1><small>EST331 · Inteligencia Artificial · búsqueda informada<br>distancias reales por carretera (OpenStreetMap, nov. 2026) · líneas rectas por coordenadas</small></header>
+  <section class="escenario">
+    <svg viewBox="0 0 640 470" aria-label="Mapa de carreteras entre Taraco y Puno">
+      <path class="lago" d="M 468 215 C 515 250, 470 360, 445 470 L 640 470 L 640 160 C 600 175, 525 185, 468 215 Z"/>
+      <text class="lago-nombre" x="560" y="330" text-anchor="middle">Lago Titicaca</text>
+      <g id="aristas"></g><g id="pesos"></g><g id="nodos"></g><g id="badges"></g><g id="costo"></g>
+    </svg>
+    <div class="panel">
+      <div class="titulo" id="titulo"></div>
+      <div class="texto" id="texto"></div>
+      <div class="frontera" id="frontera" hidden><h3>Frontera · se expande el menor</h3><ul id="lista"></ul></div>
+      <div class="resumen" id="resumen" hidden></div>
+    </div>
+  </section>
+  <footer>
+    <button id="ini" title="Al inicio">⏮</button>
+    <button id="ant" title="Anterior (←)">◀</button>
+    <button id="play" class="principal">▶ Reproducir</button>
+    <button id="sig" title="Siguiente (→)">▶</button>
+    <div class="barra"><div class="hecho" id="hecho"></div><div class="ahora" id="ahora"></div></div>
+    <div class="contador" id="contador"></div>
+    <button id="pant" title="Pantalla completa (F)">⛶</button>
+  </footer>
+</main>
+<script>
+// --- el mapa: kilómetros por carretera de OSRM sobre OpenStreetMap; h = línea recta a Puno (haversine) --- //
+const P = { A:["Azángaro",100,55], H:["Huancané",565,85], T:["Taraco",430,150,-48,0], J:["Juliaca",200,250], C:["Coata",440,290,46,0], L:["Lampa",55,400], U:["Puno",400,432] };
+const H = { A:105, H:76, T:59, J:40, C:33, L:65, U:0 };
+const E = [["T","H",28,-22,-14],["T","J",33],["T","C",35,16,10],["T","A",61],["J","C",21],["J","U",43],["J","L",35],["J","A",74],["C","U",45,-50,10],["A","L",78]];
+const ns = "http://www.w3.org/2000/svg", el = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+const $ = id => document.getElementById(id);
+const aristas = {};
+for (const [a, b, w, dx = 0, dy = 0] of E) {
+  const [, x1, y1] = P[a], [, x2, y2] = P[b];
+  const l = el("line", { x1, y1, x2, y2, class: "arista" }); aristas[a + b] = aristas[b + a] = l; $("aristas").append(l);
+  $("pesos").append(el("text", { x: (x1 + x2) / 2 + 7 + dx, y: (y1 + y2) / 2 - 7 + dy, class: "peso" }, w + " km"));
+}
+const nodos = {};
+for (const [k, [n, x, y, hx = 0, hy = 0]] of Object.entries(P)) {
+  const g = el("g", { class: "nodo" + (k === "U" ? " meta" : "") });
+  g.append(el("circle", { cx: x, cy: y, r: 39 }), el("text", { x, y: y + 6, "text-anchor": "middle", class: "nombre" }, n),
+           el("text", { x: x + hx, y: y + 59 + hy, "text-anchor": "middle", class: "h", id: "h" + k }, "h = " + H[k]));
+  nodos[k] = g; $("nodos").append(g);
+}
+const nombre = k => P[k][0];
+
+// --- las escenas ---------------------------------------------------------------------- //
+// m: h mostrar h · exp expandidos · act el que se expande · fr {nodo: etiqueta} · min el menor · nuevo recién entrados · cam camino · costo [texto, ok|mal] · hJ h exagerada de Juliaca · prob aristas que no mejoran
+const S = [
+  { t: "Una búsqueda que acierta y no explora de más", n: "Un alumno de <b>Taraco</b> quiere llegar a la UNA, en <b>Puno</b>. Hoy vamos a ver cómo una búsqueda puede ser rápida y, a la vez, no equivocarse. Los kilómetros son los reales por carretera, y las líneas rectas salen de las coordenadas de cada pueblo.", m: {} },
+  { t: "El mapa", n: "Siete pueblos, diez carreteras y el lago en medio. Salimos de Taraco y queremos llegar a Puno gastando lo menos posible. Fíjense en la carretera de la orilla: <b>Taraco, Coata, Puno</b>.", m: { exp: ["T"] } },
+  { t: "Lo que ya sabíamos: g(n)", n: "Con costo uniforme ya llegábamos bien: siempre expandíamos el nodo con menor <b>g</b>, lo recorrido desde el inicio. Desde Taraco: Huancané 28, Juliaca 33, Coata 35, Azángaro 61. Pero costo uniforme no sabe hacia dónde queda Puno.", m: { exp: ["T"], fr: { H: "g = 28", J: "g = 33", C: "g = 35", A: "g = 61" } } },
+  { t: "Lo nuevo: h(n), la heurística", n: "Agreguemos información. <b>h(n)</b> es la distancia en línea recta de cada pueblo a Puno, medida con sus coordenadas. No es el camino: es una <b>estimación de lo que falta</b>. Miren Coata: 33 km en línea recta. Juliaca, 40. Coata parece más cerca.", m: { h: true } },
+  { t: "f(n) = g(n) + h(n)", n: "A* junta las dos cosas: lo que ya gasté más lo que calculo que falta. Y expande siempre el nodo con <b>menor f</b>.", m: { h: true, fr: { C: "35 + 33 = 68", J: "33 + 40 = 73", H: "28 + 76 = 104", A: "61 + 105 = 166" } } },
+  { t: "Una condición: h admisible", n: "<b>h nunca debe exagerar.</b> Si dice 33, el camino real tiene que medir 33 o más. A eso le llamamos admisible. Una línea recta siempre cumple: ninguna carretera es más corta que la recta. Al final veremos qué pasa cuando se rompe.", m: { h: true } },
+
+  { t: "1 · Búsqueda voraz: solo h", n: "Primero, la voraz: mira solo lo que <i>parece</i> faltar. Expandimos Taraco. Entran Coata con h = 33, Juliaca con 40, Huancané con 76 y Azángaro con 105.", m: { h: true, exp: ["T"], act: "T", fr: { C: "h = 33", J: "h = 40", H: "h = 76", A: "h = 105" }, min: "C" } },
+  { t: "1 · Voraz", n: "¿Cuál sigue? El de menor h: <b>Coata</b>, en la orilla del lago. Desde Coata aparece Puno, con h = 0.", m: { h: true, exp: ["T", "C"], act: "C", fr: { U: "h = 0", J: "h = 40", H: "h = 76", A: "h = 105" }, min: "U", nuevo: ["U"] } },
+  { t: "1 · Voraz: terminó", n: "Puno tiene h = 0: lo expandimos y terminamos. Camino: Taraco, Coata, Puno. <b>Tres nodos</b> expandidos. Rapidísimo.", m: { h: true, exp: ["T", "C", "U"], cam: ["T", "C", "U"] } },
+  { t: "1 · Voraz: pero…", n: "Sumen: 35 más 45, <b>80 km</b>. ¿Y por Juliaca? 33 más 43: <b>76</b>. Coata está más cerca en línea recta, pero su carretera bordea el lago. <b>La voraz se dejó engañar.</b> Aquí por 4 km; con un lago más grande en medio, por mucho más.", m: { h: true, exp: ["T", "C", "U"], cam: ["T", "C", "U"], costo: ["80 km ✗  (el mejor es 76)", "mal"] } },
+
+  { t: "2 · Costo uniforme: solo g", n: "Ahora costo uniforme: solo g, lo recorrido. Desde Taraco: Huancané 28, Juliaca 33, Coata 35, Azángaro 61.", m: { exp: ["T"], act: "T", fr: { H: "28", J: "33", C: "35", A: "61" }, min: "H" } },
+  { t: "2 · Costo uniforme", n: "Expandimos <b>Huancané</b>, el más barato. Su única carretera vuelve a Taraco: no aporta nada nuevo.", m: { exp: ["T", "H"], act: "H", fr: { J: "33", C: "35", A: "61" }, min: "J" } },
+  { t: "2 · Costo uniforme", n: "Sigue <b>Juliaca</b> con 33. Entran Puno con 33 más 43 = <b>76</b> y Lampa con 68. Coata por Juliaca costaría 54: no mejora los 35 que ya tiene.", m: { exp: ["T", "H", "J"], act: "J", fr: { C: "35", A: "61", L: "68", U: "76" }, min: "C", nuevo: ["U", "L"], prob: ["JC"] } },
+  { t: "2 · Costo uniforme", n: "Sigue <b>Coata</b> con 35. Puno por la orilla costaría 35 más 45 = 80: no mejora los 76. Se queda como está.", m: { exp: ["T", "H", "J", "C"], act: "C", fr: { A: "61", L: "68", U: "76" }, min: "A", prob: ["CU"] } },
+  { t: "2 · Costo uniforme", n: "Siguen <b>Azángaro</b> con 61 y <b>Lampa</b> con 68. Por ahí no hay nada mejor. Costo uniforme los expande igual, porque no sabe que quedan lejos de Puno.", m: { exp: ["T", "H", "J", "C", "A", "L"], act: "L", fr: { U: "76" }, min: "U", prob: ["AL"] } },
+  { t: "2 · Costo uniforme: terminó", n: "Por fin <b>Puno con 76</b>. Camino correcto: Taraco, Juliaca, Puno. Pero expandimos <b>siete nodos</b>: todo el mapa.", m: { exp: ["T", "H", "J", "C", "A", "L", "U"], cam: ["T", "J", "U"], costo: ["76 km ✓ · 7 nodos", "ok"] } },
+
+  { t: "3 · A*: g + h", n: "Ahora A*. Desde Taraco: Coata 35 + 33 = <b>68</b>, Juliaca 33 + 40 = 73, Huancané 28 + 76 = 104, Azángaro 61 + 105 = 166.", m: { h: true, exp: ["T"], act: "T", fr: { C: "68", J: "73", H: "104", A: "166" }, min: "C" } },
+  { t: "3 · A*", n: "Expandimos <b>Coata</b>, f = 68. Puno entra con 80 + 0 = 80. Fíjense: A* ya vio un camino a Puno, por la orilla, <b>pero no se lo cree todavía</b>. Juliaca tiene f = 73, menor.", m: { h: true, exp: ["T", "C"], act: "C", fr: { J: "73", U: "80", H: "104", A: "166" }, min: "J", nuevo: ["U"] } },
+  { t: "3 · A*", n: "Expandimos <b>Juliaca</b>. Puno por Juliaca: 76 + 0 = <b>76</b>, mejor que 80. Lampa entra con 68 + 65 = 133.", m: { h: true, exp: ["T", "C", "J"], act: "J", fr: { U: "76 (era 80)", H: "104", L: "133", A: "166" }, min: "U", nuevo: ["U", "L"] } },
+  { t: "3 · A*: terminó", n: "El menor f es <b>Puno con 76</b>. Lo expandimos: es la meta. Taraco, Juliaca, Puno. 76 km con <b>cuatro nodos</b>.", m: { h: true, exp: ["T", "C", "J", "U"], cam: ["T", "J", "U"], costo: ["76 km ✓ · 4 nodos", "ok"] } },
+
+  { t: "Las tres, lado a lado", n: "La voraz: tres nodos, pero 80 km, se fue por la orilla. Costo uniforme: 76 km, pero siete nodos. <b>A*: 76 km con cuatro nodos.</b> Acierta y explora menos. Esa es la gracia de A*.", m: { h: true, exp: ["T", "C", "J", "U"], cam: ["T", "J", "U"] },
+    r: `<table><tr><th>Búsqueda</th><th>Mira</th><th>Camino</th><th>Costo</th><th>Nodos</th></tr>
+        <tr><td>Voraz</td><td>solo h</td><td>Taraco–Coata–Puno</td><td class="mal">80</td><td>3</td></tr>
+        <tr><td>Costo uniforme</td><td>solo g</td><td>Taraco–Juliaca–Puno</td><td class="ok">76</td><td>7</td></tr>
+        <tr><td><b>A*</b></td><td>g + h</td><td>Taraco–Juliaca–Puno</td><td class="ok">76</td><td><b>4</b></td></tr></table>` },
+
+  { t: "4 · ¿Y si h exagera?", n: "Pongamos <b>h(Juliaca) = 100</b>, cuando en línea recta son 40 y por carretera faltan 43. Desde Taraco: Coata 68, Huancané 104 y Juliaca 33 + 100 = <b>133</b>. Juliaca se va al fondo de la fila.", m: { h: true, hJ: 100, exp: ["T"], act: "T", fr: { C: "68", H: "104", J: "133", A: "166" }, min: "C" } },
+  { t: "4 · h exagerada", n: "Expandimos Coata: Puno entra con 80. Y ahora <b>Puno con 80 es el menor de la frontera</b>: Juliaca quedó atrás con 133. Puno sale antes de que Juliaca tenga su turno.", m: { h: true, hJ: 100, exp: ["T", "C"], act: "C", fr: { U: "80", H: "104", J: "133", A: "166" }, min: "U", nuevo: ["U"] } },
+  { t: "4 · h exagerada: dejó de ser óptimo", n: "Resultado: <b>80 km</b> por la orilla, cuando por Juliaca son 76. Una heurística que exagera le escondió a A* el buen camino. <b>Por eso pedimos que h sea admisible.</b>", m: { h: true, hJ: 100, exp: ["T", "C", "U"], cam: ["T", "C", "U"], costo: ["80 km ✗ · no óptimo", "mal"] } },
+
+  { t: "Ticket de salida · media hoja", n: "<b>1.</b> ¿Por qué A* encontró los 76 km por Juliaca y la voraz se fue por la orilla?<br><b>2.</b> ¿Qué le pasa a A* si h exagera?", m: { h: true, exp: ["T", "C", "J", "U"], cam: ["T", "J", "U"] }, s: 120 },
+];
+
+// --- dibujar una escena --------------------------------------------------------------- //
+let i = 0, reproduciendo = false, reloj = null;
+function pintar(k) {
+  const e = S[k], m = e.m;
+  for (const [key, g] of Object.entries(nodos)) {
+    g.classList.toggle("exp", !!m.exp?.includes(key)); g.classList.toggle("act", m.act === key); g.classList.toggle("fr", !!m.fr?.[key]);
+  }
+  for (const key in H) { const t = $("h" + key); t.classList.toggle("ver", !!m.h); t.classList.toggle("exagera", key === "J" && !!m.hJ); t.textContent = "h = " + (key === "J" && m.hJ ? m.hJ : H[key]); }
+  for (const l of Object.values(aristas)) { l.classList.remove("cam", "prob"); }
+  (m.prob || []).forEach(p => aristas[p].classList.add("prob"));
+  if (m.cam) for (let j = 0; j + 1 < m.cam.length; j++) aristas[m.cam[j] + m.cam[j + 1]].classList.add("cam");
+  $("badges").replaceChildren();
+  for (const [key, etq] of Object.entries(m.fr || {})) {
+    const [, x, y] = P[key], w = etq.length * 8.5 + 18, g = el("g", { class: "badge" + (m.min === key ? " min" : "") });
+    g.append(el("rect", { x: x - w / 2, y: y - 66, width: w, height: 26 }), el("text", { x, y: y - 48, "text-anchor": "middle" }, etq)); $("badges").append(g);
+  }
+  $("costo").replaceChildren();
+  if (m.costo) { const [txt, cl] = m.costo, w = txt.length * 14 + 30, g = el("g", { class: "costo badge " + cl });
+    g.append(el("rect", { x: 330 - w / 2, y: 12, width: w, height: 44 }), el("text", { x: 330, y: 43, "text-anchor": "middle" }, txt)); $("costo").append(g); }
+  // el panel
+  $("titulo").textContent = e.t; $("texto").innerHTML = e.n;
+  for (const id of ["titulo", "texto"]) { const x = $(id); x.classList.remove("fade"); void x.offsetWidth; x.classList.add("fade"); }
+  const lista = $("lista"); lista.replaceChildren();
+  if (m.fr) { $("frontera").hidden = false;
+    for (const [key, etq] of Object.entries(m.fr)) { const li = document.createElement("li"); li.textContent = nombre(key) + " · " + etq;
+      if (m.min === key) li.classList.add("min"); if (m.nuevo?.includes(key)) li.classList.add("nuevo"); lista.append(li); }
+  } else $("frontera").hidden = true;
+  $("resumen").hidden = !e.r; $("resumen").innerHTML = e.r || "";
+  $("contador").textContent = (k + 1) + " / " + S.length; $("hecho").style.width = (100 * k / (S.length - 1)) + "%";
+  $("ant").disabled = k === 0; $("sig").disabled = k === S.length - 1;
+}
+const duracion = e => e.s ?? Math.max(7, Math.round(e.n.replace(/<[^>]+>/g, "").split(/\s+/).length / 2.2) + 2);
+function ir(k) { i = Math.max(0, Math.min(S.length - 1, k)); pintar(i); if (reproduciendo) programar(); }
+function programar() {
+  clearTimeout(reloj); const seg = duracion(S[i]), ahora = $("ahora");
+  ahora.style.transition = "none"; ahora.style.left = (100 * i / (S.length - 1)) + "%"; ahora.style.width = "0"; void ahora.offsetWidth;
+  ahora.style.transition = "width " + seg + "s linear"; ahora.style.width = (100 / (S.length - 1)) + "%";
+  if (i < S.length - 1) reloj = setTimeout(() => ir(i + 1), seg * 1000); else parar();
+}
+function reproducir() { reproduciendo = true; $("play").textContent = "⏸ Pausa"; programar(); }
+function parar() { reproduciendo = false; clearTimeout(reloj); $("play").textContent = "▶ Reproducir"; $("ahora").style.transition = "none"; $("ahora").style.width = "0"; }
+$("play").onclick = () => reproduciendo ? parar() : reproducir();
+$("sig").onclick = () => ir(i + 1); $("ant").onclick = () => ir(i - 1); $("ini").onclick = () => { parar(); ir(0); };
+$("pant").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+document.addEventListener("keydown", ev => {
+  if (ev.key === "ArrowRight" || ev.key === "PageDown") ir(i + 1); else if (ev.key === "ArrowLeft" || ev.key === "PageUp") ir(i - 1);
+  else if (ev.key === " ") { ev.preventDefault(); $("play").click(); } else if (ev.key.toLowerCase() === "f") $("pant").click();
+});
+pintar(0);
+</script>
+</body>
+</html>
