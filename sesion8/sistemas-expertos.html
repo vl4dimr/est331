@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistemas expertos: la papa de Don Mario · se explica sola</title>
+<style>
+  :root { --crema:#fbf7ef; --tinta:#1f2a22; --salvia:#42654e; --terracota:#a64c28; --gris:#6b6e66; --linea:#ded6c4; --oro:#d9a441; --oroClaro:#fbf1dc; --verdeClaro:#e4eee6; --rojoClaro:#f6e4dc; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--crema); color:var(--tinta); font:22px/1.4 Georgia, "Times New Roman", serif; overflow:hidden; }
+  main { display:grid; grid-template-rows:auto 1fr auto; height:100vh; padding:14px 22px 10px; gap:10px; }
+  header { display:flex; align-items:baseline; justify-content:space-between; gap:16px; }
+  header h1 { font-size:26px; margin:0; color:var(--salvia); } header small { color:var(--gris); font-size:15px; text-align:right; }
+  .escenario { display:grid; grid-template-columns:1.35fr 1fr; gap:22px; min-height:0; }
+  .izq { background:#fff; border:1px solid var(--linea); border-radius:16px; padding:12px 14px; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+  .panel { display:flex; flex-direction:column; gap:12px; min-height:0; }
+  .titulo { font-size:30px; color:var(--terracota); font-weight:bold; line-height:1.15; }
+  .texto { font-size:24px; line-height:1.42; }
+  .texto b { color:var(--salvia); }
+  .fade { animation: fade 450ms ease both; }
+  @keyframes fade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes pop { from { transform:scale(.6); opacity:0; } to { transform:none; opacity:1; } }
+  /* la pizarra: hechos y reglas */
+  .rot { font:600 13px system-ui, sans-serif; letter-spacing:.1em; text-transform:uppercase; color:var(--gris); margin:0; }
+  .hechos { display:flex; flex-wrap:wrap; gap:6px; min-height:34px; }
+  .hecho { font:15px/1.25 system-ui, sans-serif; padding:4px 10px; border-radius:999px; border:2px solid var(--linea); background:var(--crema); }
+  .hecho.nuevo { border-color:var(--oro); background:var(--oroClaro); font-weight:700; animation: pop 450ms cubic-bezier(.34,1.56,.64,1) both; }
+  .hecho.dx { border-color:var(--salvia); background:var(--verdeClaro); font-weight:700; }
+  .hecho.vacio { border-style:dashed; color:var(--gris); }
+  .reglas { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
+  .regla { font:12.5px/1.3 system-ui, sans-serif; border:2px solid var(--linea); border-radius:9px; padding:4px 7px; background:#fff; transition:opacity .3s, background .3s, border-color .3s; }
+  .regla b.id { color:var(--terracota); margin-right:4px; }
+  .regla .si { color:var(--tinta); } .regla .si span.falta { color:var(--terracota); text-decoration:underline wavy; font-weight:700; }
+  .regla .si span.esta { color:var(--salvia); font-weight:700; }
+  .regla .ent { display:block; font-weight:700; margin-top:2px; }
+  .regla.mira { border-color:var(--oro); background:var(--oroClaro); }
+  .regla.dispara { border-color:var(--salvia); background:var(--verdeClaro); animation: pop 450ms cubic-bezier(.34,1.56,.64,1) both; }
+  .regla.falla { opacity:.45; }
+  .regla.falla.mira { opacity:1; border-color:var(--terracota); background:var(--rojoClaro); }
+  .regla.apagada { opacity:.25; }
+  .regla.cadena { border-color:var(--salvia); border-width:3px; background:var(--verdeClaro); }
+  /* figuras de las escenas sin pizarra */
+  .fig { display:flex; flex-direction:column; gap:12px; font-size:20px; }
+  .tarjeta { border:1px solid var(--linea); border-radius:12px; padding:10px 14px; background:var(--crema); }
+  .tarjeta h3 { margin:0 0 4px; font:600 14px system-ui, sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--terracota); }
+  .grande { font-size:28px; line-height:1.3; }
+  .si-ent { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:baseline; font-size:24px; }
+  .si-ent .k { font:700 16px system-ui, sans-serif; color:var(--terracota); letter-spacing:.08em; }
+  .partes { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; font-size:18px; }
+  .partes div { border:2px solid var(--salvia); border-radius:12px; padding:8px 10px; background:#fff; text-align:center; }
+  .partes div b { display:block; color:var(--salvia); font-size:19px; }
+  .partes div.motor { border-color:var(--terracota); background:var(--rojoClaro); } .partes div.motor b { color:var(--terracota); }
+  .partes div.gente { border-style:dashed; border-color:var(--gris); }
+  .flecha { text-align:center; color:var(--gris); font:16px system-ui, sans-serif; }
+  table.comp { border-collapse:collapse; width:100%; font-size:18px; }
+  table.comp td, table.comp th { border-bottom:1px solid var(--linea); padding:6px 8px; text-align:left; vertical-align:top; }
+  table.comp th { color:var(--salvia); }
+  ol.fig-lista { margin:0; padding-left:1.3em; font-size:21px; } ol.fig-lista li { margin-bottom:8px; }
+  .reloj { font:700 64px/1 system-ui, sans-serif; color:var(--terracota); }
+  footer { display:flex; align-items:center; gap:10px; }
+  button { font:inherit; font-size:20px; padding:6px 16px; border:2px solid var(--salvia); background:#fff; color:var(--salvia); border-radius:10px; cursor:pointer; }
+  button:disabled { opacity:.4; cursor:default; }
+  button.principal { background:var(--salvia); color:#fff; min-width:170px; }
+  .barra { flex:1; height:12px; background:#e6e0d2; border-radius:6px; overflow:hidden; position:relative; }
+  .barra .hecho2 { position:absolute; inset:0; width:0; background:var(--salvia); border-radius:6px; }
+  .barra .ahora { position:absolute; top:0; bottom:0; width:0; background:var(--oro); opacity:.8; }
+  .contador { font-family:system-ui, sans-serif; font-size:16px; color:var(--gris); min-width:64px; text-align:right; }
+  @media (max-width:980px) { .escenario { grid-template-columns:minmax(0,1fr); } .texto { font-size:20px; } .titulo { font-size:24px; } body { overflow:auto; } main { height:auto; } .reglas { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Sistemas expertos: la papa de Don Mario</h1><small>EST331 · Inteligencia Artificial · sesión 8<br>conocimiento, reglas de producción y motor de inferencia</small></header>
+  <section class="escenario">
+    <div class="izq" id="izq"></div>
+    <div class="panel">
+      <div class="titulo" id="titulo"></div>
+      <div class="texto" id="texto"></div>
+    </div>
+  </section>
+  <footer>
+    <button id="ini" title="Al inicio">⏮</button>
+    <button id="ant" title="Anterior (←)">◀</button>
+    <button id="play" class="principal">▶ Reproducir</button>
+    <button id="sig" title="Siguiente (→)">▶</button>
+    <div class="barra"><div class="hecho2" id="hecho"></div><div class="ahora" id="ahora"></div></div>
+    <div class="contador" id="contador"></div>
+    <button id="pant" title="Pantalla completa (F)">⛶</button>
+  </footer>
+</main>
+<script>
+// --- la base de conocimiento: la misma del Laboratorio 5 --- //
+const REGLAS = [
+  { id: "R1",  si: ["bordes de las hojas comidos"], entonces: "gorgojo adulto en el campo" },
+  { id: "R2",  si: ["galerías profundas y torcidas en el tubérculo", "larva blanca, curvada y sin patas"], entonces: "larva de gorgojo en el tubérculo" },
+  { id: "R3",  si: ["larva de gorgojo en el tubérculo"], entonces: "DIAGNÓSTICO: gorgojo de los Andes" },
+  { id: "R4",  si: ["gorgojo adulto en el campo", "galerías profundas y torcidas en el tubérculo"], entonces: "DIAGNÓSTICO: gorgojo de los Andes" },
+  { id: "R5",  si: ["galerías delgadas y poco profundas en el tubérculo", "entradas de las galerías sucias"], entonces: "larva de polilla en el tubérculo" },
+  { id: "R6",  si: ["hojas minadas"], entonces: "larva de polilla en las hojas" },
+  { id: "R7",  si: ["larva de polilla en el tubérculo"], entonces: "DIAGNÓSTICO: polilla de la papa" },
+  { id: "R8",  si: ["larva de polilla en las hojas", "galerías delgadas y poco profundas en el tubérculo"], entonces: "DIAGNÓSTICO: polilla de la papa" },
+  { id: "R9",  si: ["manchas verde oscuro con borde pálido", "moho blanco sobre las manchas"], entonces: "lesión de rancha" },
+  { id: "R10", si: ["días frescos, nublados y con lluvia"], entonces: "clima de rancha" },
+  { id: "R11", si: ["lesión de rancha"], entonces: "DIAGNÓSTICO: rancha (tizón tardío)" },
+  { id: "R12", si: ["manchas verde oscuro con borde pálido", "clima de rancha"], entonces: "SOSPECHA: rancha · revisar el moho temprano" },
+  { id: "R13", si: ["helada la noche anterior", "hojas oscuras y secas de un día para otro"], entonces: "DIAGNÓSTICO: daño por helada" },
+  { id: "R14", si: ["plantas pequeñas y amarillas en parches", "perlitas pegadas a las raíces"], entonces: "DIAGNÓSTICO: nematodo del quiste" },
+  { id: "R15", si: ["plantas pequeñas y amarillas en parches"], entonces: "SOSPECHA: nematodo · arrancar una planta y mirar las raíces" },
+];
+const MANCHAS = "manchas verde oscuro con borde pálido", LLUVIA = "días frescos, nublados y con lluvia", MOHO = "moho blanco sobre las manchas";
+const CLIMA = "clima de rancha", SOSP = "SOSPECHA: rancha · revisar el moho temprano", LESION = "lesión de rancha", RANCHA = "DIAGNÓSTICO: rancha (tizón tardío)";
+const hasta = (n, estado) => Object.fromEntries(REGLAS.slice(0, n).map(r => [r.id, estado]));
+
+// --- las escenas --- //
+// p: la pizarra { h: hechos, nuevo: el hecho que acaba de entrar, r: { id: mira|dispara|falla|apagada|cadena }, mira: id que se está revisando }
+// f: una figura en HTML en lugar de la pizarra
+const S = [
+  { t: "Don Mario tiene un problema", n: "Ilave, seis de la mañana. Don Mario encuentra <b>manchas verde oscuro, con el borde pálido</b>, en las hojas de su papa. Llovió toda la semana. ¿Qué tiene su chacra? El agrónomo de la cooperativa lo sabría en un minuto, pero hay un agrónomo para muchas comunidades.",
+    f: `<div class="tarjeta"><h3>Lo que vio Don Mario</h3><p class="grande">Manchas verde oscuro con el borde pálido en las hojas.</p><p class="grande">Días frescos, nublados, con lluvia toda la semana.</p></div><div class="tarjeta"><h3>La pregunta de hoy</h3><p class="grande">¿Podemos poner lo que sabe el agrónomo dentro de un programa?</p></div>` },
+  { t: "Dato, información, conocimiento", n: "Un <b>dato</b> suelto no dice nada. La <b>información</b> es el dato con su contexto: quién, dónde, cuándo. El <b>conocimiento</b> es lo que el experto hace con esa información: <b>si pasa esto, entonces es aquello</b>. Eso es lo que queremos guardar.",
+    f: `<div class="tarjeta"><h3>Dato</h3><p class="grande">manchas verde oscuro</p></div><div class="tarjeta"><h3>Información</h3><p class="grande">Don Mario, Ilave, hojas de papa con manchas, después de una semana de lluvia</p></div><div class="tarjeta"><h3>Conocimiento</h3><p class="grande">Si hay manchas verde oscuro y moho blanco encima, es rancha.</p></div>` },
+  { t: "¿De dónde sacamos el conocimiento?", n: "Esto se llama <b>adquisición del conocimiento</b>. Se entrevista al experto, se le mira trabajar, se leen sus manuales y se revisan casos ya resueltos. Lo difícil: el experto sabe más de lo que sabe decir. «Eso se ve, ingeniero». Sacarle las reglas es el trabajo del <b>ingeniero del conocimiento</b>.",
+    f: `<ol class="fig-lista"><li><b>Entrevistar</b> al agrónomo: «¿cómo sabe que es rancha y no helada?»</li><li><b>Observarlo</b> en la chacra, qué mira primero.</li><li><b>Leer</b> los manuales: la guía de identificación de enfermedades de la papa del INIAP y el CIP.</li><li><b>Casos resueltos</b>: diez chacras con su diagnóstico, para comprobar.</li></ol><div class="tarjeta"><h3>El cuello de botella</h3><p class="grande">«Eso se nota a la vista, ingeniero.»</p></div>` },
+  { t: "Representarlo: reglas de producción", n: "Hay varias formas de representar conocimiento: redes semánticas, marcos, lógica. Hoy usamos la más usada en sistemas expertos: <b>reglas de producción</b>. La parte <b>SI</b> se llama <b>antecedente</b> o condiciones; la parte <b>ENTONCES</b>, <b>consecuente</b> o conclusión. Todas las condiciones tienen que cumplirse.",
+    f: `<div class="tarjeta"><h3>La regla R9</h3><div class="si-ent"><span class="k">SI</span><span>manchas verde oscuro con borde pálido</span><span class="k">Y</span><span>moho blanco sobre las manchas</span><span class="k">ENTONCES</span><span><b>lesión de rancha</b></span></div></div><div class="tarjeta"><h3>En JavaScript, como en el laboratorio</h3><p style="font:17px/1.4 Consolas, monospace; margin:0">{ id: "R9",<br>&nbsp;&nbsp;si: ["manchas verde oscuro con borde pálido",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"moho blanco sobre las manchas"],<br>&nbsp;&nbsp;entonces: "lesión de rancha" }</p></div>` },
+  { t: "Las partes de un sistema experto", n: "La <b>base de conocimiento</b> guarda las reglas: no cambia de chacra en chacra. La <b>base de hechos</b> guarda lo que sabemos de esta chacra. El <b>motor de inferencia</b> junta las dos y saca conclusiones. Y tiene que poder <b>explicar</b> por qué: si no, el agrónomo no le cree.",
+    f: `<div class="partes"><div class="gente"><b>Experto</b>el agrónomo</div><div class="gente"><b>Ingeniero del conocimiento</b>ustedes</div><div class="gente"><b>Usuario</b>Don Mario</div></div><div class="flecha">↓ le dicta las reglas &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓ responde preguntas</div><div class="partes"><div><b>Base de conocimiento</b>las 15 reglas</div><div class="motor"><b>Motor de inferencia</b>adelante o atrás</div><div><b>Base de hechos</b>lo que vio Don Mario y lo que se va concluyendo</div></div><div class="flecha">↓</div><div class="partes"><div><b>Explicación</b>«es rancha por R9 y R11»</div><div><b>Interfaz</b>las preguntas y la respuesta</div><div style="border:0"></div></div>` },
+  { t: "La base de conocimiento de hoy", n: "Quince reglas para cinco problemas de la papa en el altiplano: <b>gorgojo de los Andes, polilla, rancha, helada y nematodo del quiste</b>. Algunas dan un DIAGNÓSTICO o una SOSPECHA; otras sacan una conclusión intermedia, como «lesión de rancha», que usa otra regla.",
+    p: { h: [], r: {} } },
+  { t: "Hacia adelante: las reglas del juego", n: "El motor <b>encadena hacia adelante</b>: parte de los hechos. Recorre las reglas en orden. Se <b>dispara la primera</b> que tiene todas sus condiciones y cuya conclusión todavía no sabemos. Agrega la conclusión y <b>vuelve a empezar</b> desde R1. Para cuando una vuelta entera no dispara nada.",
+    p: { h: [MANCHAS, LLUVIA], r: {} } },
+  { t: "Vuelta 1 · de R1 a R9", n: "R1 a R8 hablan de hojas comidas, larvas y galerías: Don Mario no vio nada de eso. R9 tiene las manchas, pero le <b>falta el moho blanco</b>. No se dispara.",
+    p: { h: [MANCHAS, LLUVIA], r: { ...hasta(8, "falla"), R9: "falla" }, mira: "R9" } },
+  { t: "Vuelta 1 · R10 se dispara", n: "R10 pide días frescos, nublados y con lluvia: sí. Entra un hecho nuevo, <b>clima de rancha</b>. Y como entró algo nuevo, se vuelve a empezar desde R1.",
+    p: { h: [MANCHAS, LLUVIA, CLIMA], nuevo: CLIMA, r: { ...hasta(9, "falla"), R10: "dispara" } } },
+  { t: "Vuelta 2 · R12 se dispara", n: "R1 a R9 siguen sin cumplirse. R10 ya no: su conclusión ya la sabemos. R11 necesita «lesión de rancha», que no tenemos. <b>R12</b> pide manchas y clima de rancha: sí. Sale una <b>SOSPECHA</b> de rancha.",
+    p: { h: [MANCHAS, LLUVIA, CLIMA, SOSP], nuevo: SOSP, r: { ...hasta(11, "falla"), R12: "dispara" } } },
+  { t: "Vuelta 3 · nada se dispara: para", n: "Otra vuelta entera y ninguna regla se dispara. El motor para. Dijo <b>sospecha</b>, no diagnóstico: le faltó una evidencia, y lo dice. Un buen sistema experto no afirma más de lo que sabe. Le pide a Don Mario: <b>revise el moho temprano</b>.",
+    p: { h: [MANCHAS, LLUVIA, CLIMA, SOSP], r: hasta(15, "falla") } },
+  { t: "Al día siguiente, con el moho", n: "A las seis de la mañana, con la humedad, Don Mario ve <b>moho blanco</b> sobre las manchas. Lo agregamos a los hechos y el motor corre otra vez. Ahora sí: <b>R9</b> se dispara, <b>lesión de rancha</b>.",
+    p: { h: [MANCHAS, LLUVIA, CLIMA, SOSP, MOHO, LESION], nuevo: LESION, r: { ...hasta(8, "falla"), R9: "dispara" } } },
+  { t: "R11: el diagnóstico", n: "Se vuelve a empezar. R10 y R12 ya no, sus conclusiones ya están. <b>R11</b>: hay lesión de rancha. <b>DIAGNÓSTICO: rancha</b>. Para hacer esto con cualquier chacra, el motor no necesita saber nada de papa: solo seguir las reglas.",
+    p: { h: [MANCHAS, LLUVIA, CLIMA, SOSP, MOHO, LESION, RANCHA], nuevo: RANCHA, r: { ...hasta(10, "falla"), R11: "dispara" } } },
+  { t: "¿Por qué? La explicación", n: "Don Mario pregunta: «¿por qué dice que es rancha?». El sistema responde con su <b>cadena</b>: por <b>R11</b>, porque hay lesión de rancha; y hay lesión por <b>R9</b>, porque vio manchas y moho. R10 y R12 se dispararon, pero <b>no hacen falta</b> para el diagnóstico.",
+    p: { h: [MANCHAS, LLUVIA, CLIMA, SOSP, MOHO, LESION, RANCHA], r: { ...Object.fromEntries(REGLAS.map(r => [r.id, "apagada"])), R9: "cadena", R11: "cadena" } } },
+  { t: "Hacia atrás: empezar por la pregunta", n: "El otro motor <b>encadena hacia atrás</b>: parte de una hipótesis. «¿Es rancha?». ¿Qué regla concluye rancha? <b>R11</b>, que necesita lesión de rancha. ¿Quién concluye la lesión? <b>R9</b>, que necesita manchas y moho. Nadie los concluye: hay que <b>preguntarle</b> a Don Mario. Dos preguntas y listo.",
+    p: { h: [], r: { ...Object.fromEntries(REGLAS.map(r => [r.id, "apagada"])), R9: "mira", R11: "mira" } } },
+  { t: "¿Adelante o atrás?", n: "<b>Hacia adelante</b> sirve cuando ya tenemos los datos y queremos ver todo lo que se concluye. <b>Hacia atrás</b> sirve cuando hay que preguntar y cada pregunta cuesta: va directo a lo que necesita. Los sistemas expertos clásicos de diagnóstico médico preguntaban así.",
+    f: `<table class="comp"><tr><th></th><th>Hacia adelante</th><th>Hacia atrás</th></tr><tr><td><b>Parte de</b></td><td>los hechos</td><td>una hipótesis: «¿es rancha?»</td></tr><tr><td><b>Pregunta</b></td><td>todo al inicio</td><td>solo lo que necesita</td></tr><tr><td><b>Conviene</b></td><td>con los datos ya tomados: un sensor, una ficha</td><td>en una consulta, cuando preguntar cuesta</td></tr><tr><td><b>Don Mario</b></td><td>4 reglas disparadas, todo lo que se puede concluir</td><td>2 preguntas para saber si es rancha</td></tr></table>` },
+  { t: "La trampa: ¿helada o rancha?", n: "Hojas oscuras puede ser rancha o helada. El agrónomo los separa: la helada viene después de <b>una noche bajo cero</b> y seca las hojas de un día para otro; la rancha trae <b>moho</b> con la humedad. Y un límite: el sistema solo sabe lo que le enseñamos. Si Doña Marina ve solo hojas minadas, dice <b>sin diagnóstico</b>, y no sabe que no sabe.",
+    p: { h: [], r: { ...Object.fromEntries(REGLAS.map(r => [r.id, "apagada"])), R9: "mira", R13: "mira" } } },
+  { t: "Hoy lo programan, con Claude", n: "En el laboratorio cada uno programa este motor en JavaScript, con ayuda de <b>Claude</b>. Pero con reglas: primero predicen, le piden que explique, y <b>mandan las pruebas, no Claude</b>. Anotan lo que no le aceptaron: es lo que más vale.",
+    f: `<ol class="fig-lista"><li><b>Primero predicen</b>: qué reglas se disparan para Don Félix, en el cuaderno.</li><li><b>Le piden que explique</b>: «línea por línea», «¿por qué este break?».</li><li><b>Mandan las pruebas</b>: si Claude dice que está bien y la prueba dice ✗, está mal.</li><li><b>Anotan cada turno</b>: qué pidieron, qué dijeron las pruebas, qué aceptaron y qué no.</li><li><b>Control sin Claude</b>: explicar una línea o predecir qué pasa si cambio una regla.</li></ol>` },
+  { t: "Laboratorio 5 · individual", n: "Cuatro partes: <b>adelante</b>, la <b>explicación</b>, <b>hacia atrás</b> preguntando, y la <b>consulta completa</b> con diez agricultores. Las pruebas corren en la misma página. Se entrega un PDF individual en el aula virtual hasta el <b>lunes 30 a las 23:59</b>.",
+    f: `<div class="tarjeta"><h3>Las cuatro partes</h3><ol class="fig-lista"><li><code>adelante(hechos, reglas)</code></li><li><code>explicar(conclusion, disparadas, reglas)</code></li><li><code>atras(meta, conocidos, reglas, preguntar)</code></li><li><code>diagnosticar(reglas, preguntar)</code></li></ol></div><div class="tarjeta"><h3>Entrega</h3><p class="grande">PDF individual · aula virtual<br>lunes 30 de noviembre, 23:59</p></div>` },
+  { t: "Antes de salir, sin Claude", n: "Cinco minutos, en una hoja, sin celular. Don Félix vio <b>bordes de las hojas comidos</b>, <b>galerías profundas y torcidas</b> y una <b>larva blanca, curvada y sin patas</b>. ¿Qué reglas se disparan hacia adelante, en orden? ¿Y por qué R4 no se dispara, si tiene sus dos condiciones?",
+    p: { h: ["bordes de las hojas comidos", "galerías profundas y torcidas en el tubérculo", "larva blanca, curvada y sin patas"], r: {} }, s: 300 },
+];
+
+// --- dibujar --- //
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+function pizarra(p) {
+  const hs = p.h.length ? p.h.map(h => `<span class="hecho${h === p.nuevo ? " nuevo" : ""}${/^(DIAGNÓSTICO|SOSPECHA)/.test(h) && h !== p.nuevo ? " dx" : ""}">${esc(h)}</span>`).join("")
+                        : `<span class="hecho vacio">todavía no sabemos nada de esta chacra</span>`;
+  const rs = REGLAS.map(r => {
+    const est = p.r[r.id] || "", mira = p.mira === r.id;
+    const si = r.si.map(c => mira ? `<span class="${p.h.includes(c) ? "esta" : "falta"}">${esc(c)}</span>` : esc(c)).join(" + ");
+    return `<div class="regla ${est}${mira ? " mira" : ""}"><b class="id">${r.id}</b><span class="si">${si}</span><span class="ent">→ ${esc(r.entonces)}</span></div>`;
+  }).join("");
+  return `<p class="rot">Base de hechos · lo que sabemos de esta chacra</p><div class="hechos">${hs}</div><p class="rot">Base de conocimiento · las reglas del agrónomo</p><div class="reglas">${rs}</div>`;
+}
+let i = 0, reproduciendo = false, reloj = null;
+function pintar(k) {
+  const e = S[k];
+  $("izq").innerHTML = e.p ? pizarra(e.p) : `<div class="fig">${e.f}</div>`;
+  $("titulo").textContent = e.t; $("texto").innerHTML = e.n;
+  for (const id of ["titulo", "texto", "izq"]) { const x = $(id); x.classList.remove("fade"); void x.offsetWidth; x.classList.add("fade"); }
+  $("contador").textContent = (k + 1) + " / " + S.length; $("hecho").style.width = (100 * k / (S.length - 1)) + "%";
+  $("ant").disabled = k === 0; $("sig").disabled = k === S.length - 1;
+}
+const duracion = e => e.s ?? Math.max(8, Math.round(e.n.replace(/<[^>]+>/g, "").split(/\s+/).length / 2.2) + 2);
+function ir(k) { i = Math.max(0, Math.min(S.length - 1, k)); pintar(i); if (reproduciendo) programar(); }
+function programar() {
+  clearTimeout(reloj); const seg = duracion(S[i]), ahora = $("ahora");
+  ahora.style.transition = "none"; ahora.style.left = (100 * i / (S.length - 1)) + "%"; ahora.style.width = "0"; void ahora.offsetWidth;
+  ahora.style.transition = "width " + seg + "s linear"; ahora.style.width = (100 / (S.length - 1)) + "%";
+  if (i < S.length - 1) reloj = setTimeout(() => ir(i + 1), seg * 1000); else parar();
+}
+function reproducir() { reproduciendo = true; $("play").textContent = "⏸ Pausa"; programar(); }
+function parar() { reproduciendo = false; clearTimeout(reloj); $("play").textContent = "▶ Reproducir"; $("ahora").style.transition = "none"; $("ahora").style.width = "0"; }
+$("play").onclick = () => reproduciendo ? parar() : reproducir();
+$("sig").onclick = () => ir(i + 1); $("ant").onclick = () => ir(i - 1); $("ini").onclick = () => { parar(); ir(0); };
+$("pant").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "ArrowRight" || ev.key === "PageDown") ir(i + 1); else if (ev.key === "ArrowLeft" || ev.key === "PageUp") ir(i - 1);
+  else if (ev.key === " ") { ev.preventDefault(); $("play").click(); } else if (ev.key.toLowerCase() === "f") $("pant").click();
+});
+pintar(0);
+</script>
+</body>
+</html>

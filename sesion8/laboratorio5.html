@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio 5 · Un sistema experto para la papa · EST331</title>
+<style>
+  :root { --crema:#fbf7ef; --papel:#ffffff; --tinta:#1f2a22; --salvia:#42654e; --terracota:#a64c28; --gris:#6b6e66; --linea:#ded6c4; --oro:#d9a441; --codigo:#1f2a22; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--crema); color:var(--tinta); font:18px/1.55 Georgia, "Times New Roman", serif; }
+  .marco { max-width:980px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  header { padding-block:28px 8px; }
+  .kicker { font:600 13px system-ui, sans-serif; letter-spacing:.1em; text-transform:uppercase; color:var(--terracota); margin:0; }
+  h1 { font-size:36px; line-height:1.1; color:var(--salvia); margin:6px 0 10px; text-wrap:balance; }
+  h2 { font-size:26px; color:var(--salvia); margin:34px 0 8px; text-wrap:balance; }
+  h3 { font-size:19px; margin:18px 0 6px; }
+  p { margin:0 0 10px; max-width:70ch; }
+  code, pre, textarea { font-family:Consolas, "Cascadia Mono", monospace; }
+  code { background:#efe9db; padding:1px 5px; border-radius:4px; font-size:.9em; }
+  pre.bloque { background:var(--papel); border:1px solid var(--linea); border-radius:10px; padding:10px 12px; font-size:13.5px; overflow-x:auto; margin:0 0 10px; }
+  .parte { background:var(--papel); border:1px solid var(--linea); border-radius:14px; padding:16px 18px 18px; margin-top:16px; }
+  .parte h2 { margin-top:0; }
+  .pide { border-left:5px solid var(--salvia); padding:4px 12px; background:#f3f6f1; border-radius:6px; margin:8px 0 12px; }
+  .pide p { margin:4px 0; }
+  .claude { border-left:5px solid var(--oro); padding:4px 12px; background:#fbf4e4; border-radius:6px; margin:8px 0 12px; }
+  .claude p { margin:4px 0; }
+  textarea { width:100%; min-height:300px; font-size:14px; line-height:1.45; padding:10px 12px; border:1px solid var(--linea); border-radius:10px; background:#fffdf8; color:var(--codigo); resize:vertical; tab-size:2; }
+  .botones { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  button { font:600 15px system-ui, sans-serif; padding:7px 14px; border:2px solid var(--salvia); background:#fff; color:var(--salvia); border-radius:9px; cursor:pointer; }
+  button.principal { background:var(--salvia); color:#fff; }
+  button.suave { border-color:var(--linea); color:var(--gris); }
+  .salida { font:14px/1.5 system-ui, sans-serif; background:var(--crema); border:1px dashed var(--linea); border-radius:10px; padding:8px 12px; min-height:2.5em; white-space:pre-wrap; overflow-x:auto; }
+  .salida .ok { color:var(--salvia); font-weight:700; } .salida .mal { color:var(--terracota); font-weight:700; } .salida .log { color:var(--gris); }
+  details.pista { margin-top:8px; border:1px dashed var(--linea); border-radius:10px; padding:6px 12px; }
+  details.pista summary { cursor:pointer; color:var(--terracota); font-weight:700; }
+  .tabla { overflow-x:auto; }
+  table.reglas, table.bit { border-collapse:collapse; font:14.5px/1.4 system-ui, sans-serif; width:100%; }
+  table.reglas td, table.reglas th, table.bit td, table.bit th { border-bottom:1px solid var(--linea); padding:5px 8px; text-align:left; vertical-align:top; }
+  table.reglas th, table.bit th { color:var(--salvia); }
+  table.reglas td:first-child { font-weight:700; color:var(--terracota); white-space:nowrap; }
+  table.reglas td.dx { font-weight:700; }
+  table.bit td { color:var(--gris); font-style:italic; }
+  ol.informe li, ol.reglas-ia li { margin-bottom:8px; max-width:70ch; }
+  footer { margin-top:36px; padding-block:18px 40px; border-top:1px solid var(--linea); font-size:14px; color:var(--gris); }
+  @media (max-width:760px) { h1 { font-size:28px; } }
+</style>
+</head>
+<body>
+<header class="marco">
+  <p class="kicker">EST331 · Inteligencia Artificial · Laboratorio 5 · individual</p>
+  <h1>Un sistema experto para la papa</h1>
+  <p>Cada uno programa el motor de inferencia de un sistema experto que diagnostica cinco problemas de la papa en el altiplano: <b>gorgojo de los Andes, polilla, rancha, helada y nematodo del quiste</b>. Las 15 reglas y los 10 casos de campo ya están cargados; ustedes escriben el código que razona con ellos.</p>
+  <p>Es <b>individual</b>. Pueden programar con ayuda de Claude (<b>claude.ai</b>, gratis en el navegador), con las reglas de abajo. Cada parte tiene su editor y su botón <b>Probar</b>: el código corre en esta misma página y las pruebas dicen qué está bien y qué falta. Lo que escriben se guarda solo en este navegador.</p>
+  <p><b>Entrega:</b> un PDF en el aula virtual, hasta el <b>lunes 30 de noviembre a las 23:59</b>.</p>
+</header>
+
+<main class="marco">
+  <section class="parte">
+    <h2>Cómo se trabaja con Claude en este laboratorio</h2>
+    <ol class="reglas-ia">
+      <li><b>Primero piensen, después pregunten.</b> Antes de pedir código, escriban en su cuaderno qué reglas creen que se disparan para Don Félix, y en qué orden. Después comparen con lo que da su programa.</li>
+      <li><b>Pídanle que explique, no solo que escriba.</b> «Explícame este código línea por línea», «¿por qué usas <code>break</code> aquí?», «¿qué pasaría si quito esta condición?».</li>
+      <li><b>Las pruebas mandan, no Claude.</b> Si Claude dice que está bien y las pruebas dicen ✗, está mal. Péguenle el mensaje de la prueba que falla y pídanle que encuentre el error.</li>
+      <li><b>Anoten cada turno:</b> qué le pidieron, qué dijeron las pruebas con su respuesta, y qué le aceptaron y qué no. Lo que más vale en el informe es lo que <b>no</b> le aceptaron, y por qué.</li>
+      <li><b>En clase hay un control sin Claude.</b> Les voy a pedir que expliquen una línea de su código o que predigan qué pasa si cambio una regla. Si lo copiaron sin entenderlo, ahí se nota.</li>
+    </ol>
+    <p>Un buen primer mensaje para Claude, para copiar y completar:</p>
+    <pre class="bloque">Estoy aprendiendo sistemas expertos. Tengo una lista de reglas en JavaScript así:
+{ id: "R1", si: ["bordes de las hojas comidos"], entonces: "gorgojo adulto en el campo" }
+Quiero escribir adelante(hechos, reglas) con encadenamiento hacia adelante:
+[aquí copian lo que pide la parte 1]
+No me des el código todavía: primero explícame el algoritmo con un ejemplo a mano.</pre>
+  </section>
+
+  <h2>La base de conocimiento</h2>
+  <p>Quince reglas, en este orden. Las que empiezan con <b>DIAGNÓSTICO</b> o <b>SOSPECHA</b> son las respuestas finales; las demás son conclusiones intermedias que otras reglas usan.</p>
+  <div class="tabla"><table class="reglas" id="tablaReglas"><tr><th>Regla</th><th>Si se cumple todo esto…</th><th>…entonces</th></tr></table></div>
+  <p style="margin-top:10px">En el código ya están cargados así, no hace falta copiarlos:</p>
+  <pre class="bloque">REGLAS   // [{ id:"R1", si:["bordes de las hojas comidos"], entonces:"gorgojo adulto en el campo" }, …]  quince
+CASOS    // [{ quien:"Don Mario, Ilave", vio:["manchas verde oscuro con borde pálido", …] }, …]  diez
+agricultor(caso, anotadas)   // una función preguntar(hecho): responde true si el agricultor lo vio
+                             // y anota la pregunta en el arreglo anotadas</pre>
+
+  <section class="parte" id="p1">
+    <h2>Parte 1 · Encadenamiento hacia adelante</h2>
+    <div class="pide"><p>Escriban <code>adelante(hechos, reglas)</code>. Devuelve <code>{ hechos, disparadas }</code>: todos los hechos al final (primero los de entrada, luego los nuevos en el orden en que aparecieron) y la lista de los <code>id</code> de las reglas que se dispararon, en orden.</p>
+      <p>La regla de la clase: se recorren las reglas <b>en orden</b>; se dispara la <b>primera</b> que tiene todas sus condiciones en los hechos y cuya conclusión <b>todavía no</b> está; se agrega la conclusión y se <b>vuelve a empezar</b> desde R1. Se para cuando una vuelta completa no dispara ninguna. No cambien el arreglo de entrada: trabajen sobre una copia.</p></div>
+    <textarea id="c1" spellcheck="false"></textarea>
+    <div class="botones"><button class="principal" data-probar="1">Probar</button><button class="suave" data-restaurar="1">Volver al código inicial</button></div>
+    <div class="salida" id="s1"></div>
+    <details class="pista"><summary>Pista</summary><p>Un <code>while</code> con una bandera <code>otra</code>. Adentro, un <code>for</code> sobre las reglas; cuando una se dispara, <code>otra = true</code> y <code>break</code> para volver a empezar. Para ver si están todas las condiciones: <code>r.si.every(c =&gt; h.includes(c))</code>.</p></details>
+  </section>
+
+  <section class="parte" id="p2">
+    <h2>Parte 2 · ¿Por qué? La explicación</h2>
+    <div class="pide"><p>Escriban <code>explicar(conclusion, disparadas, reglas)</code>: los <code>id</code> de las reglas que hicieron falta para llegar a esa conclusión, en el orden en que se dispararon. Solo las necesarias: a Don Félix se le dispararon R1, R2 y R3, pero el gorgojo sale solo de R2 y R3.</p>
+      <p>Si la conclusión no salió de ninguna regla disparada (era un hecho de entrada, o nunca se concluyó), devuelve <code>[]</code>.</p></div>
+    <textarea id="c2" spellcheck="false"></textarea>
+    <div class="botones"><button class="principal" data-probar="2">Probar</button><button class="suave" data-restaurar="2">Volver al código inicial</button></div>
+    <div class="salida" id="s2"></div>
+    <details class="pista"><summary>Pista</summary><p>Hacia atrás: busquen entre las disparadas la regla cuyo <code>entonces</code> es la conclusión; márquenla, y hagan lo mismo con cada una de sus condiciones (una función que se llama a sí misma). Al final, filtren <code>disparadas</code> quedándose con las marcadas: así salen en orden.</p></details>
+  </section>
+
+  <section class="parte" id="p3">
+    <h2>Parte 3 · Encadenamiento hacia atrás, preguntando</h2>
+    <div class="pide"><p>Escriban <code>atras(meta, conocidos, reglas, preguntar)</code>, que devuelve <code>true</code> o <code>false</code>. <code>conocidos</code> es un objeto <code>{ hecho: true/false }</code> con lo que ya se sabe.</p>
+      <p>Así razona: (1) si la meta ya está en <code>conocidos</code>, devuelve ese valor; (2) si <b>ninguna</b> regla concluye la meta, es algo que se ve en el campo: se le pregunta al agricultor con <code>preguntar(meta)</code>; (3) si no, se prueban las reglas que la concluyen, en orden, y cada condición con <code>atras</code>, en orden, parando en la primera que falle. En los tres casos se guarda la respuesta en <code>conocidos</code>, para no preguntar dos veces lo mismo.</p></div>
+    <textarea id="c3" spellcheck="false"></textarea>
+    <div class="botones"><button class="principal" data-probar="3">Probar</button><button class="suave" data-restaurar="3">Volver al código inicial</button></div>
+    <div class="salida" id="s3"></div>
+  </section>
+
+  <section class="parte" id="p4">
+    <h2>Parte 4 · La consulta completa, con los diez agricultores</h2>
+    <div class="pide"><p>Escriban <code>diagnosticar(reglas, preguntar)</code>: prueba con <code>atras</code> cada DIAGNÓSTICO posible, en el orden en que aparece por primera vez en las reglas (gorgojo, polilla, rancha, helada, nematodo), con un solo objeto <code>conocidos</code> para toda la consulta. Devuelve el primero que se demuestre, o <code>"sin diagnóstico"</code>.</p>
+      <p>Las pruebas atienden a los diez agricultores y cuentan cuántas preguntas les hizo su sistema. Si hace preguntas de más, o repite alguna, no pasa.</p></div>
+    <textarea id="c4" spellcheck="false"></textarea>
+    <div class="botones"><button class="principal" data-probar="4">Probar</button><button class="suave" data-restaurar="4">Volver al código inicial</button></div>
+    <div class="salida" id="s4"></div>
+  </section>
+
+  <section class="parte">
+    <h2>El informe · lo que se entrega</h2>
+    <p>Un PDF individual, con su nombre, su código de las cuatro partes (pueden copiarlo de los editores), la captura de las pruebas en verde, y:</p>
+    <ol class="informe">
+      <li><b>La predicción.</b> Lo que escribieron antes de programar sobre Don Félix (qué reglas, en qué orden) y lo que dio el programa. ¿Acertaron?</li>
+      <li>A Don Saturnino se le dispara R1 («gorgojo adulto en el campo») pero el sistema no le diagnostica gorgojo. ¿Por qué? ¿Está bien que no lo haga?</li>
+      <li>Doña Marina solo vio hojas minadas y sale «sin diagnóstico». Escriban una regla R16 para ese caso, digan de qué fuente la sacaron, agréguenla al final de las reglas y digan qué casos cambian.</li>
+      <li>Para Don Félix: ¿cuántas reglas se dispararon hacia adelante, y cuántas preguntas le hizo hacia atrás? ¿Cuándo conviene cada forma de razonar?</li>
+      <li>Para Don Mario, hacia adelante sale una SOSPECHA y <code>diagnosticar</code> dice «sin diagnóstico». ¿Qué le sirve más a Don Mario? Cambien <code>diagnosticar</code> para que, si no hay diagnóstico, devuelva la sospecha, y muestren que funciona.</li>
+      <li><b>La conversación con Claude</b>, en una tabla como esta, con al menos tres turnos:
+        <div class="tabla" style="margin-top:6px"><table class="bit">
+          <tr><th>Turno</th><th>Qué le pedí</th><th>Qué dijeron las pruebas</th><th>Qué le acepté y qué no, y por qué</th></tr>
+          <tr><td>1</td><td>Que me explique el encadenamiento hacia adelante con Don Félix, sin código</td><td>— (todavía no había código)</td><td>Acepté el ejemplo. No acepté que dijera que R4 también se dispara: su conclusión ya estaba</td></tr>
+          <tr><td>2</td><td>El código de adelante</td><td>4 de 6: falla «no cambia el arreglo de entrada»</td><td>Su código hacía <code>hechos.push</code>. Le pedí que trabaje sobre una copia</td></tr>
+        </table></div>
+        (Las filas grises son un ejemplo; la suya va con lo que de verdad pasó.)</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="marco">
+  <p>EST331 · Inteligencia Artificial · FINESI · UNA Puno · 2026-II. Las reglas están simplificadas para la clase a partir de la «Guía para identificación de enfermedades de la papa en el campo» (J. Revelo, en <i>Manejo integrado de las principales plagas y enfermedades del cultivo de papa</i>, INIAP–CIP, Quito, 1997) y de las descripciones del daño del gorgojo de los Andes y de la polilla de la papa del CIP y del INIA. Los agricultores y sus casos son inventados. No reemplazan al agrónomo.</p>
+  <p><button class="suave" id="borrar">Borrar mi código de este navegador</button></p>
+</footer>
+
+<script>
+"use strict";
+// ---------- los datos, compartidos por la página y por cada prueba ---------- //
+const PRELUDIO = String.raw`
+const REGLAS = [
+  { id: "R1",  si: ["bordes de las hojas comidos"], entonces: "gorgojo adulto en el campo" },
+  { id: "R2",  si: ["galerías profundas y torcidas en el tubérculo", "larva blanca, curvada y sin patas"], entonces: "larva de gorgojo en el tubérculo" },
+  { id: "R3",  si: ["larva de gorgojo en el tubérculo"], entonces: "DIAGNÓSTICO: gorgojo de los Andes" },
+  { id: "R4",  si: ["gorgojo adulto en el campo", "galerías profundas y torcidas en el tubérculo"], entonces: "DIAGNÓSTICO: gorgojo de los Andes" },
+  { id: "R5",  si: ["galerías delgadas y poco profundas en el tubérculo", "entradas de las galerías sucias"], entonces: "larva de polilla en el tubérculo" },
+  { id: "R6",  si: ["hojas minadas"], entonces: "larva de polilla en las hojas" },
+  { id: "R7",  si: ["larva de polilla en el tubérculo"], entonces: "DIAGNÓSTICO: polilla de la papa" },
+  { id: "R8",  si: ["larva de polilla en las hojas", "galerías delgadas y poco profundas en el tubérculo"], entonces: "DIAGNÓSTICO: polilla de la papa" },
+  { id: "R9",  si: ["manchas verde oscuro con borde pálido", "moho blanco sobre las manchas"], entonces: "lesión de rancha" },
+  { id: "R10", si: ["días frescos, nublados y con lluvia"], entonces: "clima de rancha" },
+  { id: "R11", si: ["lesión de rancha"], entonces: "DIAGNÓSTICO: rancha (tizón tardío)" },
+  { id: "R12", si: ["manchas verde oscuro con borde pálido", "clima de rancha"], entonces: "SOSPECHA: rancha · revisar el moho temprano" },
+  { id: "R13", si: ["helada la noche anterior", "hojas oscuras y secas de un día para otro"], entonces: "DIAGNÓSTICO: daño por helada" },
+  { id: "R14", si: ["plantas pequeñas y amarillas en parches", "perlitas pegadas a las raíces"], entonces: "DIAGNÓSTICO: nematodo del quiste" },
+  { id: "R15", si: ["plantas pequeñas y amarillas en parches"], entonces: "SOSPECHA: nematodo · arrancar una planta y mirar las raíces" },
+];
+const CASOS = [
+  { quien: "Don Mario, Ilave",        vio: ["manchas verde oscuro con borde pálido", "días frescos, nublados y con lluvia"] },
+  { quien: "Doña Rosa, Acora",        vio: ["manchas verde oscuro con borde pálido", "moho blanco sobre las manchas", "días frescos, nublados y con lluvia"] },
+  { quien: "Don Félix, Juli",         vio: ["bordes de las hojas comidos", "galerías profundas y torcidas en el tubérculo", "larva blanca, curvada y sin patas"] },
+  { quien: "Doña Juana, Azángaro",    vio: ["bordes de las hojas comidos", "galerías profundas y torcidas en el tubérculo"] },
+  { quien: "Don Teófilo, almacén de Lampa", vio: ["galerías delgadas y poco profundas en el tubérculo", "entradas de las galerías sucias"] },
+  { quien: "Doña Elena, Huancané",    vio: ["hojas minadas", "galerías delgadas y poco profundas en el tubérculo"] },
+  { quien: "Don Alberto, Mañazo",     vio: ["helada la noche anterior", "hojas oscuras y secas de un día para otro"] },
+  { quien: "Doña Lucía, Cabanillas",  vio: ["plantas pequeñas y amarillas en parches"] },
+  { quien: "Don Saturnino, Taraco",   vio: ["plantas pequeñas y amarillas en parches", "perlitas pegadas a las raíces", "bordes de las hojas comidos"] },
+  { quien: "Doña Marina, Pomata",     vio: ["hojas minadas"] },
+];
+function agricultor(caso, anotadas) { return function (hecho) { if (anotadas) anotadas.push(hecho); return caso.vio.includes(hecho); }; }
+`;
+
+const INICIAL = {
+1: `// Parte 1 · Encadenamiento hacia adelante. Devuelve { hechos, disparadas }.
+function adelante(hechos, reglas) {
+  const h = [...hechos];      // una copia: no tocamos el arreglo de entrada
+  const disparadas = [];
+  let otra = true;
+
+  while (otra) {
+    otra = false;
+    // Recorran las reglas en orden. La primera que tenga todas sus condiciones (r.si)
+    // en h, y cuya conclusión (r.entonces) todavía no esté en h:
+    //   agreguen la conclusión a h, su id a disparadas, otra = true, y break.
+
+  }
+  return { hechos: h, disparadas };
+}
+
+console.log(adelante(CASOS[2].vio, REGLAS).disparadas);   // Don Félix: ¿qué predijeron?
+`,
+2: `// Parte 2 · La explicación. (Su adelante de la parte 1 se carga sola antes de este código.)
+function explicar(conclusion, disparadas, reglas) {
+  const usadas = new Set();
+
+  function sube(hecho) {
+    // 1. Busquen la regla que está en disparadas y cuyo entonces es este hecho
+    // 2. Si no hay, o ya está en usadas, return
+    // 3. Agréguenla a usadas y llamen a sube con cada una de sus condiciones
+  }
+
+  sube(conclusion);
+  return disparadas.filter(id => usadas.has(id));
+}
+
+const felix = adelante(CASOS[2].vio, REGLAS);
+console.log(explicar("DIAGNÓSTICO: gorgojo de los Andes", felix.disparadas, REGLAS));   // debe dar R2, R3
+`,
+3: `// Parte 3 · Encadenamiento hacia atrás, preguntando.
+function atras(meta, conocidos, reglas, preguntar) {
+  // 1. Si conocidos[meta] ya tiene valor (no es undefined), devuélvanlo
+
+  // 2. Las reglas que concluyen la meta:
+  const quienes = reglas.filter(r => r.entonces === meta);
+
+  // 3. Si no hay ninguna: es algo que se ve en el campo. Pregunten, guarden y devuelvan
+
+  // 4. Si hay: por cada regla, en orden, si TODAS sus condiciones se demuestran con atras
+  //    (usen every: para en la primera que falla), guarden true y devuelvan true
+
+  // 5. Si ninguna regla sirvió: guarden false y devuelvan false
+  return false;
+}
+
+const anotadas = [];
+console.log(atras("DIAGNÓSTICO: rancha (tizón tardío)", {}, REGLAS, agricultor(CASOS[1], anotadas)), anotadas);
+// Doña Rosa: debe dar true, con solo dos preguntas
+`,
+4: `// Parte 4 · La consulta completa. (Su atras de la parte 3 ya está cargado.)
+function diagnosticar(reglas, preguntar) {
+  const conocidos = {};                 // uno solo para toda la consulta
+  const metas = [];
+  // 1. Junten en metas los entonces que empiezan con "DIAGNÓSTICO", sin repetir, en orden
+
+  // 2. Prueben cada meta con atras(meta, conocidos, reglas, preguntar); la primera que dé true, devuélvanla
+
+  return "sin diagnóstico";
+}
+
+for (const caso of CASOS) {
+  const anotadas = [];
+  console.log(caso.quien, "→", diagnosticar(REGLAS, agricultor(caso, anotadas)), "·", anotadas.length, "preguntas");
+}
+`,
+};
+
+// ---------- las pruebas de cada parte ---------- //
+const PRUEBAS = {
+1: String.raw`
+const entrada = CASOS[2].vio.slice();
+const f = adelante(entrada, REGLAS);
+prueba(f && Array.isArray(f.disparadas) && f.disparadas.join(",") === "R1,R2,R3", "Don Félix: R1, R2, R3 (R4 no, su conclusión ya estaba)", f ? "dio " + (f.disparadas || []).join(", ") : "");
+prueba(entrada.length === 3, "No cambia el arreglo de entrada", "su función le agregó " + (entrada.length - 3) + " hechos");
+prueba(f && f.hechos && f.hechos.slice(0, 3).join("|") === CASOS[2].vio.join("|") && f.hechos.length === 6, "Los hechos: primero los de entrada, luego los tres nuevos", f && f.hechos ? f.hechos.length + " hechos" : "");
+const r = adelante(CASOS[1].vio, REGLAS);
+prueba(r.disparadas.join(",") === "R9,R10,R11,R12", "Doña Rosa: R9, R10, R11, R12", "dio " + r.disparadas.join(", "));
+prueba(adelante([], REGLAS).disparadas.length === 0, "Sin hechos no se dispara nada", "");
+const esperado = ["SOSPECHA: rancha", "DIAGNÓSTICO: rancha", "DIAGNÓSTICO: gorgojo", "DIAGNÓSTICO: gorgojo", "DIAGNÓSTICO: polilla", "DIAGNÓSTICO: polilla", "DIAGNÓSTICO: daño por helada", "SOSPECHA: nematodo", "DIAGNÓSTICO: nematodo", "(nada)"];
+let malos = [];
+CASOS.forEach((c, k) => { const hs = adelante(c.vio, REGLAS).hechos.filter(x => /^(DIAGNÓSTICO|SOSPECHA)/.test(x));
+  const primero = hs.find(x => x.startsWith("DIAGNÓSTICO")) || hs[0] || "(nada)";
+  if (!primero.startsWith(esperado[k])) malos.push(c.quien + ": " + primero); });
+prueba(malos.length === 0, "Los diez casos de campo dan lo que diría el agrónomo", malos.join(" · "));
+`,
+2: String.raw`
+const f = adelante(CASOS[2].vio, REGLAS), r = adelante(CASOS[1].vio, REGLAS), s = adelante(CASOS[8].vio, REGLAS);
+const e = (c, x) => (explicar(c, x.disparadas, REGLAS) || []).join(",");
+prueba(e("DIAGNÓSTICO: gorgojo de los Andes", f) === "R2,R3", "Don Félix, gorgojo: R2, R3", "dio " + e("DIAGNÓSTICO: gorgojo de los Andes", f));
+prueba(e("DIAGNÓSTICO: rancha (tizón tardío)", r) === "R9,R11", "Doña Rosa, rancha: R9, R11", "dio " + e("DIAGNÓSTICO: rancha (tizón tardío)", r));
+prueba(e("SOSPECHA: rancha · revisar el moho temprano", r) === "R10,R12", "Doña Rosa, sospecha: R10, R12", "dio " + e("SOSPECHA: rancha · revisar el moho temprano", r));
+prueba(e("DIAGNÓSTICO: nematodo del quiste", s) === "R14", "Don Saturnino, nematodo: solo R14 (R1 no tiene nada que ver)", "dio " + e("DIAGNÓSTICO: nematodo del quiste", s));
+prueba(e("bordes de las hojas comidos", f) === "", "Un hecho de entrada no necesita reglas: []", "dio " + e("bordes de las hojas comidos", f));
+prueba(e("DIAGNÓSTICO: daño por helada", f) === "", "Algo que no se concluyó: []", "dio " + e("DIAGNÓSTICO: daño por helada", f));
+`,
+3: String.raw`
+let q = [], k = {};
+const rosa = atras("DIAGNÓSTICO: rancha (tizón tardío)", k, REGLAS, agricultor(CASOS[1], q));
+prueba(rosa === true, "Doña Rosa: sí es rancha", "dio " + rosa);
+prueba(q.join("|") === "manchas verde oscuro con borde pálido|moho blanco sobre las manchas", "… preguntando solo por las manchas y el moho", "preguntó: " + q.join(" · "));
+prueba(k["lesión de rancha"] === true && k["DIAGNÓSTICO: rancha (tizón tardío)"] === true, "Guarda en conocidos lo que demostró", JSON.stringify(k));
+const antes = q.length; atras("DIAGNÓSTICO: rancha (tizón tardío)", k, REGLAS, agricultor(CASOS[1], q));
+prueba(q.length === antes, "Si ya lo sabe, no vuelve a preguntar", "hizo " + (q.length - antes) + " preguntas más");
+q = [];
+const mario = atras("DIAGNÓSTICO: rancha (tizón tardío)", {}, REGLAS, agricultor(CASOS[0], q));
+prueba(mario === false, "Don Mario: no se puede afirmar que es rancha (no vio moho)", "dio " + mario);
+q = [];
+const juana = atras("DIAGNÓSTICO: gorgojo de los Andes", {}, REGLAS, agricultor(CASOS[3], q));
+prueba(juana === true && q.length === 3, "Doña Juana: gorgojo, con tres preguntas (R3 falla, R4 sirve)", "dio " + juana + " con " + q.length + ": " + q.join(" · "));
+q = [];
+atras("DIAGNÓSTICO: gorgojo de los Andes", { "galerías profundas y torcidas en el tubérculo": false }, REGLAS, agricultor(CASOS[2], q));
+prueba(!q.includes("galerías profundas y torcidas en el tubérculo"), "No pregunta lo que ya está en conocidos", "preguntó: " + q.join(" · "));
+`,
+4: String.raw`
+const esperado = [["sin diagnóstico", 8], ["DIAGNÓSTICO: rancha (tizón tardío)", 6], ["DIAGNÓSTICO: gorgojo de los Andes", 2], ["DIAGNÓSTICO: gorgojo de los Andes", 3], ["DIAGNÓSTICO: polilla de la papa", 4], ["DIAGNÓSTICO: polilla de la papa", 5], ["DIAGNÓSTICO: daño por helada", 7], ["sin diagnóstico", 8], ["DIAGNÓSTICO: nematodo del quiste", 8], ["sin diagnóstico", 7]];
+CASOS.forEach((c, k) => {
+  const q = [], d = diagnosticar(REGLAS, agricultor(c, q)), [ed, eq] = esperado[k];
+  const repetidas = q.length - new Set(q).size;
+  prueba(d === ed && q.length === eq && repetidas === 0, c.quien + ": " + ed.replace("DIAGNÓSTICO: ", "") + " · " + eq + " preguntas",
+    "dio " + d + " con " + q.length + " preguntas" + (repetidas ? " (" + repetidas + " repetidas)" : ""));
+});
+`,
+};
+
+// ---------- la tabla de reglas ---------- //
+const $ = id => document.getElementById(id);
+(new Function(PRELUDIO + "; return REGLAS;"))().forEach(r => {
+  const tr = document.createElement("tr");
+  const t = (txt, cl) => { const td = document.createElement("td"); td.textContent = txt; if (cl) td.className = cl; tr.append(td); };
+  t(r.id); t(r.si.join("  +  ")); t(r.entonces, /^(DIAGNÓSTICO|SOSPECHA)/.test(r.entonces) ? "dx" : "");
+  $("tablaReglas").append(tr);
+});
+
+// ---------- correr el código en un Worker, con tiempo límite ---------- //
+const clave = n => "lab5-codigo-" + n;
+function leer(n) { try { return localStorage.getItem(clave(n)); } catch (e) { return null; } }
+function guardar(n, txt) { try { localStorage.setItem(clave(n), txt); } catch (e) {} }
+for (const n of [1, 2, 3, 4]) {
+  $("c" + n).value = leer(n) ?? INICIAL[n];
+  $("c" + n).addEventListener("input", () => guardar(n, $("c" + n).value));
+  $("c" + n).addEventListener("keydown", ev => { if (ev.key === "Tab") { ev.preventDefault(); const t = ev.target, p = t.selectionStart; t.setRangeText("  ", p, t.selectionEnd, "end"); guardar(n, t.value); } });
+}
+// cada parte carga antes el código de las partes anteriores, sin sus console.log ni sus variables de ejemplo
+const limpiar = txt => txt.replace(/^\s*console\.log\(.*\);?\s*(\/\/.*)?$/gm, "").replace(/^(const|let) (felix|anotadas) = .*$/gm, "").replace(/^for \(const caso of CASOS\) \{[\s\S]*?^\}/gm, "");
+function codigoHasta(n) { let c = ""; for (let k = 1; k < n; k++) c += limpiar($("c" + k).value) + "\n"; return c; }
+
+function correr(n, extra) {
+  const salida = $("s" + n);
+  salida.innerHTML = '<span class="log">corriendo…</span>';
+  const cuerpo = PRELUDIO + "\n" + codigoHasta(n) + "\n" + $("c" + n).value + "\n;{\n" + extra + "\n}";
+  const fuente = `
+    const enviar = m => postMessage(m);
+    console.log = (...a) => enviar({ tipo: "log", txt: a.map(x => typeof x === "string" ? x : JSON.stringify(x)).join(" ") });
+    const prueba = (ok, nombre, detalle) => enviar({ tipo: "prueba", ok: !!ok, nombre, detalle });
+    try { ${cuerpo}
+      enviar({ tipo: "fin" });
+    } catch (e) { enviar({ tipo: "error", txt: String(e && e.message || e) }); }`;
+  const url = URL.createObjectURL(new Blob([fuente], { type: "text/javascript" }));
+  const w = new Worker(url);
+  const lineas = [];
+  let bien = 0, total = 0;
+  const pintar = () => { salida.innerHTML = lineas.join("\n") || '<span class="log">(sin salida)</span>'; };
+  const reloj = setTimeout(() => { w.terminate(); lineas.push('<span class="mal">Se colgó: más de 8 segundos. ¿Un while que nunca termina, o una función que se llama sin parar?</span>'); pintar(); }, 8000);
+  const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  w.onerror = ev => { ev.preventDefault(); clearTimeout(reloj); w.terminate();
+    lineas.push('<span class="mal">Error al leer el código: ' + esc(ev.message || "revisen llaves y paréntesis") + "</span>"); pintar(); };
+  w.onmessage = ({ data: m }) => {
+    if (m.tipo === "log") lineas.push('<span class="log">' + esc(m.txt) + "</span>");
+    else if (m.tipo === "prueba") { total++; if (m.ok) bien++; lineas.push((m.ok ? '<span class="ok">✓ ' : '<span class="mal">✗ ') + esc(m.nombre) + "</span>" + (m.ok || !m.detalle ? "" : " · " + esc(m.detalle))); }
+    else if (m.tipo === "error") { lineas.push('<span class="mal">Error: ' + esc(m.txt) + "</span>"); clearTimeout(reloj); w.terminate(); }
+    else if (m.tipo === "fin") { clearTimeout(reloj); w.terminate(); if (total) lineas.push((bien === total ? '<span class="ok">' : '<span class="mal">') + bien + " de " + total + " pruebas</span>"); }
+    pintar();
+  };
+}
+document.querySelectorAll("[data-probar]").forEach(b => b.onclick = () => correr(+b.dataset.probar, PRUEBAS[b.dataset.probar]));
+document.querySelectorAll("[data-restaurar]").forEach(b => b.onclick = () => { const n = b.dataset.restaurar; $("c" + n).value = INICIAL[n]; guardar(n, INICIAL[n]); $("s" + n).textContent = ""; });
+$("borrar").onclick = () => { for (const n of [1, 2, 3, 4]) { try { localStorage.removeItem(clave(n)); } catch (e) {} $("c" + n).value = INICIAL[n]; $("s" + n).textContent = ""; } };
+</script>
+</body>
+</html>
